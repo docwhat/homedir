@@ -26,13 +26,10 @@ import os, sys, traceback
 
 ## TODO
 ## * unmergeSubDir
-## * mkdirs attribute for control file -- directories that should
-##   be made at dest instead of being linked
 ## * detect conflicts from other packages (this might be done...)
 ## * copy the homedir.control into ~/.homedir/installed to allow the user
 ##   to know what was installed.  Note: it should work whether this info
 ##   is accurate or not
-## * figure out bug with extra space on next line after stdin/input
 
 VERSION="0.0 super alpha"
 IGNORE_DIRS=('.svn','CVS','RCS','.git')
