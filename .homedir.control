@@ -1,6 +1,6 @@
 package: homedir
 priority: critical
-maintainer: Christian Holtje <homedir@docwhat.gerf.org>
+maintainer: Christian Holtje <bugs.homedir@docwhat.gerf.org>
 depends: 
 standards-version: 1
 description: Homedir Base Package
