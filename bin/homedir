@@ -557,6 +557,8 @@ commands:
                 elif not options.quiet:
                     print >> sys.stderr, "%s:%d  " %(options.config,num) + \
                           "ignoring packages directory '%s': does not exist" % val
+            elif var == 'synccmd':
+                print >> sys.stderr, "future option %s ignored" % var
             else:
                 print >> sys.stderr, "%s:%d  invalid variable: '%s'" % (options.config,
                                                                         num, var)
