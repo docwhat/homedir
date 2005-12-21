@@ -435,9 +435,9 @@ class HDPackage(object):
                                              dst=destpath):
                         self.symlink(srcpath,destpath)
             else:
-                if self._resolveConflict(src=srcpath, dst=destpath):
-                    self.unsymlink(destpath)
-                    self.symlink(srcpath,destpath)
+                # It's a broken symlink and safe to nuke it (yes?)
+                self.unsymlink(destpath)
+                self.symlink(srcpath,destpath)
         elif os.path.exists(destpath):
             if self._resolveConflict(src=srcpath, dst=destpath):
                 self.symlink(srcpath,destpath)
@@ -501,7 +501,8 @@ commands:
   install               Install a package
   remove                Uninstall a package
   upgrade               Upgrade your installed packages (reinstall)
-  list                  List all packages"""
+  list                  List all packages
+  sync                  Use synccmd to syncronize the repository"""
     parser = optparse.OptionParser(version=VERSION, usage=usage)
 
     parser.add_option("-c","--config",
@@ -525,6 +526,10 @@ commands:
                       action="store_true", dest="debug_functions",
                       default=False,
                       help="Turn on debugging info")
+    parser.add_option('-s','--sync',
+                      action="store_true", dest="do_sync",
+                      default=False,
+                      help="Do a sync prior to executing a command")
 
     (options,args) = parser.parse_args()
 
@@ -534,6 +539,7 @@ commands:
     WARN=options.debug
 
     packagedirs = options.packagedirs = []
+    options.synccmd = 'echo No synccmd defined'
     # Setup the config file
     try:
         fp = file(os.path.expanduser(options.config),'r')
@@ -558,7 +564,7 @@ commands:
                     print >> sys.stderr, "%s:%d  " %(options.config,num) + \
                           "ignoring packages directory '%s': does not exist" % val
             elif var == 'synccmd':
-                print >> sys.stderr, "future option %s ignored" % var
+                options.synccmd = os.path.expanduser(os.path.expandvars(val))
             else:
                 print >> sys.stderr, "%s:%d  invalid variable: '%s'" % (options.config,
                                                                         num, var)
@@ -715,17 +721,17 @@ def buildDeps(options,*packages):
 
 def scanReverseDepends(options):
     for depender in options.packages.values():
-        # Force everyone to depend on homedir
         if depender.depends is None:
-            depends = []
+            dependencies = []
         else:
-            depends = depender.depends
-        
+            dependencies = depender.depends
+
+        # Everyone depends on homedir
         if depender.package != 'homedir' and \
-           'homedir' not in depends:
-            depends.append('homedir')
+           not [x for x in dependencies if x.package == 'homedir']:
+            dependencies.append('homedir')
         
-        for dependee in depends:
+        for dependee in dependencies:
             dependee = lookUpOne(options,dependee)
             if dependee.reverse_depends is None:
                 dependee.reverse_depends = []
@@ -744,111 +750,111 @@ def buildPackageReverseDepends(package,reverses=None,ignore=None):
             buildPackageReverseDepends(p,reverses,ignore)
     return reverses
 
-conflict_counter = 0
-def resolveConflict(package, src, dst):
-    "Ask the user to resolve any conflicts"
-    global conflict_counter
-    if not conflict_counter:
-        print "[conflict]"
-    conflict_counter += 1
+class resolveConflict:
+    counter = 0
+    def __call__(package, src, dst):
+        "Ask the user to resolve any conflicts"
+        if not package.counter:
+            print "[conflict]"
+        package.counter += 1
 
-    legit_answers = ['x','c','d','s']
+        legit_answers = ['x','c','d','s']
 
-    # Information about the source
-    src_display = None
-    if os.path.isdir(src):
-        src_display = "I want to replace it with a directory"
-    elif os.path.exists(src):
-        src_display = "I want to replace it with a file"
-        
+        # Information about the source
+        src_display = None
+        if os.path.isdir(src):
+            src_display = "I want to replace it with a directory"
+        elif os.path.exists(src):
+            src_display = "I want to replace it with a file"
 
-    # Possible move candidate
-    dstmove = "%s.bak" % dst 
-    if os.path.exists(dstmove):
-        legit_answers.append('o')
-    else:
-        legit_answers.append('r')
 
-    # Collect possible extra information
-    dst_display = dst
-    if os.path.isdir(dst):
-        ftype = "dir"
-    elif os.path.exists(dst):
-        ftype = "file"
-    else:
-        ftype = "????"
-
-    link_display = None
-    if os.path.islink(dst):
-        dst_display += "@"
-        link_display = "The link points to '%s'" % os.readlink(dst)
-        if os.path.exists(dst):
-            link_display += " (a %s)" % ftype
-            ftype = "link to a %s" % ftype
+        # Possible move candidate
+        dstmove = "%s.bak" % dst 
+        if os.path.exists(dstmove):
+            legit_answers.append('o')
         else:
-            ftype = "broken link"
-            link_display += " which does not exist"
-    
-    answer = ''
-    count = 0
-    while answer not in legit_answers:
-        count += 1
-        if count > 20:
-            print "...Skipping..."
-            answer = 's'
-            continue
-        print " ","*"*40
-        print "    CONFLICT: The %s '%s' is in the way" % (ftype,dst_display)
-        if link_display:
-            print "              %s" % link_display
-        if src_display:
-            print "              %s" % src_display
-        print "    I can do the following:"
-        print "       x - exit"
-        print "       c - cancel package"
-        print "       d - destroy the current file"
-        print "       s - skip file"
-        if 'r' in legit_answers:
-            print "       r - rename '%s' to '%s'" % (dst,os.path.basename(dstmove))
-        if 'o' in legit_answers:
-            print "       o - rename '%s' to '%s', over-writing the existing .bak file" % (dst,os.path.basename(dstmove))
-        print "    Your choice? [%s] " % "/".join(legit_answers),
-        answer = sys.stdin.readline().strip().lower()
-    if answer == 'x':
-        print "Okay then, quitting..."
-        sys.exit(0)
-    elif answer == 'c':
-        raise ConflictError(src=src, dst=dst)
-    elif answer == 'd':
-        if os.path.exists(dst):
-            os.unlink(dst)
-        return True
-    elif answer == 's':
-        return False
-    elif answer == 'r':
-        if os.path.exists(dstmove):
-            raise ConflictError("A file has prevented backup %s"%dstmove,
-                                src=src, dst=dst)
-        os.rename(dst,dstmove)
-        return True
-    elif answer == 'o':
-        if os.path.exists(dstmove):
-            os.unlink(dstmove)
-        os.rename(dst,dstmove)
-        return True
-    else:
-        raise AssertionError("Hmm...seems to be code missing.")
-HDPackage.conflict_resolver = resolveConflict
+            legit_answers.append('r')
+
+        # Collect possible extra information
+        dst_display = dst
+        if os.path.isdir(dst):
+            ftype = "dir"
+        elif os.path.exists(dst):
+            ftype = "file"
+        else:
+            ftype = "????"
+
+        link_display = None
+        if os.path.islink(dst):
+            dst_display += "@"
+            link_display = "The link points to '%s'" % os.readlink(dst)
+            if os.path.exists(dst):
+                link_display += " (a %s)" % ftype
+                ftype = "link to a %s" % ftype
+            else:
+                ftype = "broken link"
+                link_display += " which does not exist"
+
+        answer = ''
+        count = 0
+        while answer not in legit_answers:
+            count += 1
+            if count > 20:
+                print "...Skipping..."
+                answer = 's'
+                continue
+            print " ","*"*40
+            print "    CONFLICT: The %s '%s' is in the way" % (ftype,dst_display)
+            if link_display:
+                print "              %s" % link_display
+            if src_display:
+                print "              %s" % src_display
+            print "    I can do the following:"
+            print "       x - exit"
+            print "       c - cancel package"
+            print "       d - destroy the current file"
+            print "       s - skip file"
+            if 'r' in legit_answers:
+                print "       r - rename '%s' to '%s'" % (dst,os.path.basename(dstmove))
+            if 'o' in legit_answers:
+                print "       o - rename '%s' to '%s', over-writing the existing .bak file" % (dst,os.path.basename(dstmove))
+            print "    Your choice? [%s] " % "/".join(legit_answers),
+            answer = sys.stdin.readline().strip().lower()
+
+        if answer == 'x':
+            print "Okay then, quitting..."
+            sys.exit(0)
+        elif answer == 'c':
+            raise ConflictError(src=src, dst=dst)
+        elif answer == 'd':
+            if os.path.exists(dst):
+                os.unlink(dst)
+            return True
+        elif answer == 's':
+            return False
+        elif answer == 'r':
+            if os.path.exists(dstmove):
+                raise ConflictError("A file has prevented backup %s"%dstmove,
+                                    src=src, dst=dst)
+            os.rename(dst,dstmove)
+            return True
+        elif answer == 'o':
+            if os.path.exists(dstmove):
+                os.unlink(dstmove)
+            os.rename(dst,dstmove)
+            return True
+        else:
+            raise AssertionError("The while loop should prevent this from ever happening.")
+HDPackage.conflict_resolver = resolveConflict()
 
 def actionLoop( func, action, packages ):
-    global conflict_counter
     for package in packages:
         try:
-            conflict_counter = 0
+            package.conflict_resolver.counter = 0
             start = "%-60s" % ("    %s %s..." % (action,package.package))
             print start,
             func(package)
-            if conflict_counter:
+            if package.conflict_resolver.counter:
                 print start,
             print "[ok]"
         except ConflictError,err:
@@ -989,19 +995,32 @@ def do_upgrade(options,*packages):
         
     actionLoop( func, 'upgrading', extra + packages )
 
+def do_sync(options):
+    debug("executing '%s' in %s" % (options.synccmd,
+                                    os.getcwd()))
+    os.system( options.synccmd )
+
 
 COMMANDS = {'list': do_list,
             'install': do_install,
             'remove': do_remove,
             'upgrade': do_upgrade,
+            'sync': do_sync,
             }
 
 if "__main__" == __name__:
     try:
         options, args = doParse()
+        command = args[0]
+        rest_args = args[1:]
+        if options.do_sync:
+            if command == 'sync':
+                warn("Ignoring silly request to sync prior to doing a sync")
+            else:
+                do_sync(options)
         scanPackages(options)
 
-        COMMANDS[args[0]](options,*args[1:])
+        COMMANDS[command](options,*rest_args)
     except KeyboardInterrupt:
         print >> sys.stderr, "\nUser Aborted",
         sys.exit(1)
