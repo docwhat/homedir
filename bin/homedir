@@ -31,7 +31,7 @@ import os, sys, traceback
 ##   to know what was installed.  Note: it should work whether this info
 ##   is accurate or not
 
-VERSION="0.0 super alpha"
+VERSION="0.1 keen beans"
 IGNORE_DIRS=('.svn','CVS','RCS','.git')
 STANDARDSVERSION = 1
 COMMANDS = None # this is set below
@@ -80,6 +80,7 @@ You are running python %s""" % sys.version
 if '--python-retried' in sys.argv:
     del sys.argv[sys.argv.index('--python-retried')]
 
+# Error Classes
 class NotPackageError(StandardError): pass
 class ConflictError(StandardError):
     src = None
@@ -94,6 +95,7 @@ class ConflictError(StandardError):
         dst = self.dst
         return "The file %(dst)s prevents linking %(src)s" % locals()
 
+# Debug Mode Helpers
 DEBUG = False
 def debug(*msg):
     "Either prints a debug message or is a nop, depending on options"
@@ -113,6 +115,7 @@ def fdebug(fname,locals=None):
                 
         print "   -> %s(%s)" % (fname, args)
 
+# Warn mode helper
 WARN = True
 def warn(*msg):
     "Either prints a warning message or is a nop, depending on options"
@@ -120,6 +123,7 @@ def warn(*msg):
         print "WARN: %s" % " ".join(map(str,msg))
 
 def pluralize(singular,plural,count):
+    "Returns the correct form of a word, based on count"
     if count == 1:
         return singular
     elif count > 1:
@@ -522,10 +526,6 @@ commands:
                       default=False,
                       help="Turn on debugging info")
 
-    # optparse
-    # --config -c
-    # if file is empty and not specified, then ask for location
-    # commands: install, uninstall, reinstall, list, info
     (options,args) = parser.parse_args()
 
     global DEBUG,DEBUG_FUNCTIONS,WARN
@@ -647,6 +647,7 @@ def scanPackages(options):
                 raise AssertionError("%s is a string %s" % (n,p))
 
 def lookUp(options,*names):
+    """Look up one or more packages; one per string in names"""
     fdebug('lookUp',locals())
     packages = []
     bad = []
@@ -714,9 +715,17 @@ def buildDeps(options,*packages):
 
 def scanReverseDepends(options):
     for depender in options.packages.values():
+        # Force everyone to depend on homedir
         if depender.depends is None:
-            continue
-        for dependee in depender.depends:
+            depends = []
+        else:
+            depends = depender.depends
+        
+        if depender.package != 'homedir' and \
+           'homedir' not in depends:
+            depends.append('homedir')
+        
+        for dependee in depends:
             dependee = lookUpOne(options,dependee)
             if dependee.reverse_depends is None:
                 dependee.reverse_depends = []
