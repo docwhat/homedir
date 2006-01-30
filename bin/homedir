@@ -47,10 +47,10 @@ if sys.version_info >= (2,3):
     import optparse
 if sys.version_info >= (2,2):
     try:
-        import optik as optparse
+        import optparse
     except ImportError:
         try:
-            import optparse
+            import optik as optparse
         except ImportError:
             print >> sys.stderr, """This program will work with python2.2 if you have
 the optik module installed.  You can get optik from
