@@ -728,7 +728,7 @@ def scanReverseDepends(options):
 
         # Everyone depends on homedir
         if depender.package != 'homedir' and \
-           not [x for x in dependencies if x.package == 'homedir']:
+           not [x for x in dependencies if x == 'homedir']:
             dependencies.append('homedir')
         
         for dependee in dependencies:
