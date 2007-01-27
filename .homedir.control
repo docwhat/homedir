@@ -8,3 +8,9 @@ description: Homedir Base Package
  remove, upgrade and manage packages for your home directory
 dirs:
  bin
+ .homedir
+ .homedir/cache
+mkdirs:
+ bin
+ .homedir
+ .homedir/cache
