@@ -22,7 +22,7 @@ function homedirFetcher() {
     shift
     
     if [ -e "${OUTFILE}" ]; then
-        doFetch=$(find "${OUTFILE}" -mtime -${AGE} -print)
+        doFetch=$(find "${OUTFILE}" -ctime +${AGE} -print)
     else
         doFetch=1
     fi
