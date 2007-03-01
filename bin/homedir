@@ -152,7 +152,8 @@ class HDPackage(object):
     conflict_resolver = None
 
     _attributes = ('package','priority','maintainer','depends',
-                   'standards-version','description','dirs','mkdirs')
+                   'standards-version','description','dirs','mkdirs',
+                   'ubuntu-packages')
 
     def __init__(self, directory):
         self.package_location = os.path.realpath(directory)
