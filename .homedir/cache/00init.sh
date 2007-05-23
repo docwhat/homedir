@@ -12,6 +12,7 @@ function getHomedirCache() {
     echo "${DIR}"
 }
 
+# Fetches a file
 function homedirFetcher() {
     set -eu
     URL="$1"
@@ -21,8 +22,12 @@ function homedirFetcher() {
     AGE="$1"
     shift
     
+    md5sum='none'
     if [ -e "${OUTFILE}" ]; then
         doFetch=$(find "${OUTFILE}" -ctime +${AGE} -print)
+        if [ -n "${doFetch}" ]; then
+            md5sum=$(md5sum "${OUTFILE}")
+        fi
     else
         doFetch=1
     fi
@@ -31,6 +36,14 @@ function homedirFetcher() {
         wget -q -O "${OUTFILE}" "${URL}"
         #curl -o "${OUTFILE}" "${URL}"
         #lynx -source "${URL}" > "${OUTFILE}"
+        newmd5sum=$(md5sum "${OUTFILE}")
+        if [ "${md5sum}" = "${newmd5sum}" ]; then
+            echo "cached"
+        else
+            echo "fetched"
+        fi
+    else
+        echo "cached"
     fi
 }
 
