@@ -389,12 +389,10 @@ class HDPackage(object):
                 if os.path.isdir(srcpath):
                     other = self.__class__.fromSubdir(linkpath)
                     if not other:
-                        # just try to merge as normal
-                        if os.path.isdir(destpath) or \
-                           self._resolveConflict(src=srcpath,
+                        if self._resolveConflict(src=srcpath,
                                                  dst=destpath):
-                            os.mkdir(destpath)
-                            self.merge(src=srcpath,dest=destpath)
+                            # Retry after the resolve
+                            self.mergeSubDir(src,dest,content)
                     else:
                         debug("%s splitting with %s" % (self, other))
                         self.unsymlink(destpath)
@@ -789,13 +787,12 @@ class resolveConflict:
 
         link_display = None
         if os.path.islink(dst):
-            dst_display += "@"
-            link_display = "The link points to '%s'" % os.readlink(dst)
+            link_display = "The symlink points to '%s'" % os.readlink(dst)
             if os.path.exists(dst):
-                link_display += " (a %s)" % ftype
-                ftype = "link to a %s" % ftype
+                link_display += " (a %s)." % ftype
+                ftype = "symlink"
             else:
-                ftype = "broken link"
+                ftype = "broken symlink"
                 link_display += " which does not exist"
 
         answer = ''
@@ -807,7 +804,7 @@ class resolveConflict:
                 answer = 's'
                 continue
             print " ","*"*40
-            print "    CONFLICT: The %s '%s' is in the way" % (ftype,dst_display)
+            print "    CONFLICT: The %s '%s' is in the way." % (ftype,dst_display)
             if link_display:
                 print "              %s" % link_display
             if src_display:
