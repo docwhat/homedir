@@ -124,7 +124,6 @@ def warn(*msg):
 
 def pluralize(singular,plural,count):
     "Returns the correct form of a word, based on count"
-    print "NARF: %r %r %r" % (singular,plural,count)
     if count == 1:
         return singular
     elif count > 1 or count == 0:
