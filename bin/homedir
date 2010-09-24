@@ -5,7 +5,7 @@ This is a package management system designed to work around packages
 for the homedirectory.  The code is based upon ideas from GNU Stow.
 
 HomeDir - manage the installation of packages for a user's homedir
-Copyright (C) 2004-2006 by Christian Höltje
+Copyright (C) 2004-2010 by Christian Höltje
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,10 +43,11 @@ HOMEDIRCONFIG = os.path.join(HOMEDIR,"config")
 ###
 ### Version Check
 ###
-if sys.version_info < (2,5):
+if sys.version_info < (2,6):
     print >> sys.stderr, """
 
-This program requires python 2.5.  You're running python %s.
+This program requires python 2.6.
+You're running python %s
 
 Please update your python.
 
