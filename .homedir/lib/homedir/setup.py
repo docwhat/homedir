@@ -22,28 +22,69 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
 import os, sys
-import urllib2, httplib, zipfile, shutil
+import urllib2, httplib, tarfile, shutil, errno
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
-class MyZipFile(zipfile.ZipFile):
+# Monkey Patch os.makedirs
+def makedirs(name, mode=0777):
+    """makedirs(path [, mode=0777])
 
-    def extract(self, member, path=None, pwd=None):
+    Super-mkdir; create a leaf directory and all intermediate ones.
+    Works like mkdir, except that any intermediate path segment (not
+    just the rightmost) will be created if it does not exist.  This is
+    recursive.
+
+    Monkey Patched.
+    """
+    head, tail = os.path.split(name)
+    if not tail:
+        head, tail = os.path.split(head)
+    if head and tail and not os.path.exists(head):
+        try:
+            makedirs(head, mode)
+        except OSError, e:
+            # be happy if someone already created the path
+            if e.errno != errno.EEXIST:
+                raise
+        if tail == os.curdir:           # xxx/newdir/. exists if xxx/newdir exists
+            return
+    try:
+        os.mkdir(name, mode)
+    except OSError, e:
+        # be happy if someone already created the path
+        if e.errno != errno.EEXIST:
+            raise
+os.makedirs = makedirs
+
+class MyTarFile(tarfile.TarFile):
+
+    def extract(self, member, path=""):
         "Modified version of extract that strips out the leading path part."
-        if not isinstance(member, zipfile.ZipInfo):
-            member = self.getinfo(member)
+        self._check('r')
+        if not isinstance(member, tarfile.TarInfo):
+            member = self.getmember(member)
 
-        fname = member.filename
-        for i in member.filename:
-            if fname[0] in (os.path.sep, os.path.altsep):
-                break
-            fname = fname[1:]
+        if member.islnk():
+            fname = member.linkname
+        else:
+            fname = member.name
+        if not fname == 'pax_global_header':
+            for i in member.name:
+                if fname[0] in (os.path.sep, os.path.altsep):
+                    fname = fname[1:]
+                    break
+                fname = fname[1:]
 
-        member.filename = fname
+            if member.islnk():
+                member.linkname = fname
+            else:
+                member.name = fname
 
-        return zipfile.ZipFile.extract(self, member, path, pwd)
+            return tarfile.TarFile.extract(self, member, path)
+        return True
 
 class Setup:
     "Setup/Install/Configure Homedir."
@@ -103,27 +144,36 @@ class Setup:
                 sys.exit(0)
         else:
             print "I need to create the directory structure..."
-            os.mkdir(self.dir)
-            os.mkdir(self.repo_dir)
-            os.mkdir(self.pkg_dir)
+            os.makedirs(self.pkg_dir)
             print "%s is all setup!" % self.dir
 
     def fetchFiles(self):
-        "Retrieve and unzip the files from the web."
+        "Retrieve and unpack the files from the web."
         httplib.HTTPConnection.debuglevel = 1
-        request = urllib2.Request("http://github.com/docwhat/homedir/zipball/master")
+        request = urllib2.Request("http://github.com/docwhat/homedir/tarball/master")
         opener = urllib2.build_opener()
-        # TODO: Figure out how to stream this instead of doing it in memory.
         f = opener.open(request)
-        sio = StringIO()
-        sio.write(f.read())
-        sio.seek(0)
-        z = MyZipFile(sio)
-        z.extractall(self.dir)
+        z = MyTarFile.open(fileobj=f, mode='r|*')
+        z.extractall(self.pkg_dir)
+
+    def copyFiles(self):
+        top = os.path.abspath(__file__)
+        for i in range(4):
+            top = os.path.dirname(top)
+
+        def ignore(dir, names):
+            s = set(['.git', '.svn', 'CVS'])
+            for n in names:
+                if n.endswith('.pyc'):
+                    s.add(n)
+            return s
+
+        # This requires the monkey patched os.makedirs().
+        shutil.copytree(top, self.pkg_dir, ignore=ignore)
 
     def installHomedir(self):
         "Install/upgrade homedir's package"
-        raise "TODO: Need to python executa homedir."
+        raise "TODO: Need to python execute homedir."
 
     def getch(self):
         "Returns a single character"
@@ -152,8 +202,8 @@ class Setup:
 
 
 if __name__ == "__main__":
-    if sys.version_info < (2,6):
-        print >> sys.stderr, "This program requires python 2.6.\nYou're running python %s" % sys.version
+    if sys.version_info < (2,5):
+        print >> sys.stderr, "This program requires python 2.5.\nYou're running python %s" % sys.version
         sys.exit(1)
     Setup(via_web=("<stdin>" == __file__))
 
