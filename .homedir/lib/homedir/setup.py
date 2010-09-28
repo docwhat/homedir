@@ -22,7 +22,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
 import os, sys
-import urllib2, httplib, tarfile, shutil, errno
+import urllib2, httplib, tarfile, shutil, errno, subprocess
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -173,7 +173,16 @@ class Setup:
 
     def installHomedir(self):
         "Install/upgrade homedir's package"
-        raise "TODO: Need to python execute homedir."
+        print "Setting up homedir..."
+        homedir_path = os.path.join(self.pkg_dir, 'homedir', 'bin', 'homedir')
+        try:
+            retcode = subprocess.call([sys.executable, homedir_path, 'upgrade', 'homedir'])
+            if retcode < 0:
+                print "Hmmm....unable to setup homedir. It returned %d." % retcode
+            else:
+                print "It's setup..."
+        except OSError, e:
+            print "Hmmm...failed to run homedir:", e
 
     def getch(self):
         "Returns a single character"
