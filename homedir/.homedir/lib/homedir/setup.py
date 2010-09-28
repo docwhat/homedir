@@ -57,7 +57,6 @@ def makedirs(name, mode=0777):
         # be happy if someone already created the path
         if e.errno != errno.EEXIST:
             raise
-os.makedirs = makedirs
 
 class MyTarFile(tarfile.TarFile):
 
@@ -144,7 +143,7 @@ class Setup:
                 sys.exit(0)
         else:
             print "I need to create the directory structure..."
-            os.makedirs(self.pkg_dir)
+            makedirs(self.pkg_dir)
             print "%s is all setup!" % self.dir
 
     def fetchFiles(self):
@@ -156,20 +155,44 @@ class Setup:
         z = MyTarFile.open(fileobj=f, mode='r|*')
         z.extractall(self.pkg_dir)
 
-    def copyFiles(self):
-        top = os.path.abspath(__file__)
-        for i in range(4):
-            top = os.path.dirname(top)
+    def copyFiles(self, src=None, dst=None):
+        "Copy files instead of getting them from the web."
+        if src is None and dst is None:
+            src = os.path.abspath(__file__)
+            for i in range(5):
+                src = os.path.dirname(src)
+            dst=self.pkg_dir
 
-        def ignore(dir, names):
-            s = set(['.git', '.svn', 'CVS'])
-            for n in names:
-                if n.endswith('.pyc'):
-                    s.add(n)
-            return s
-
-        # This requires the monkey patched os.makedirs().
-        shutil.copytree(top, self.pkg_dir, ignore=ignore)
+        names = os.listdir(src)
+        makedirs(dst)
+        errors = []
+        for name in names:
+            if name in set(['.git', '.svn', 'CVS']) or name.endswith('.pyc'):
+                continue
+            srcname = os.path.join(src, name)
+            dstname = os.path.join(dst, name)
+            try:
+                if os.path.islink(srcname):
+                    linkto = os.readlink(srcname)
+                    os.symlink(linkto, dstname)
+                elif os.path.isdir(srcname):
+                    self.copyFiles(srcname, dstname)
+                else:
+                    shutil.copy2(srcname, dstname)
+            except (IOError, os.error), why:
+                errors.append((srcname, dstname, str(why)))
+            except StandardError, err:
+                errors.extend(err.args[0])
+        try:
+            shutil.copystat(src, dst)
+        except OSError, why:
+            if WindowsError is not None and isinstance(why, WindowsError):
+                # Copying file access times may fail on Windows
+                pass
+            else:
+                errors.extend((src, dst, str(why)))
+        if errors:
+            raise Error, errors
 
     def installHomedir(self):
         "Install/upgrade homedir's package"
