@@ -109,6 +109,7 @@ class Setup:
         else:
             self.copyFiles()
 
+        self.fixHashBang()
         self.installHomedir()
 
     def createDir(self):
@@ -206,6 +207,21 @@ class Setup:
                 print "It's setup..."
         except OSError, e:
             print "Hmmm...failed to run homedir:", e
+
+    def fixHashBang(self):
+        "Go through all the python scripts and fix the hash-bangs."
+        bindir = os.path.join(self.pkg_dir, 'homedir', 'bin')
+        for entry in os.listdir(bindir):
+            p = os.path.join(bindir, entry)
+            if os.path.isfile(p):
+                fd = file(p, 'r')
+                hashbang = fd.readline()
+                if hashbang.startswith('#!') and 'python' in hashbang:
+                    data = "#!%s -utWall\n" % (sys.executable) + fd.read()
+                    fd.close()
+                    fd = file(p, 'w')
+                    fd.write(data)
+                fd.close()
 
     def getch(self):
         "Returns a single character"
