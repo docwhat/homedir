@@ -30,6 +30,7 @@ CONTROLDIR = ".homedir"
 CONTROLFILENAME = "control"
 OLD_CONTROLFILENAME = ".homedir.control"
 PKG_VERSION = 1
+IGNORE_DIRS=('.svn','CVS','RCS','.git')
 
 # Error Classes
 class NotPackageError(StandardError):
@@ -202,8 +203,6 @@ class Package(object):
 
     def unsymlink(self,file):
         "Helper method to remove a symlink and only symlinks"
-        fdebug('%s.unsymlink' % self.package,
-               {'file':file})
         if os.path.islink(file):
             os.unlink(file)
         elif os.path.exists(file):
@@ -212,9 +211,6 @@ class Package(object):
 
     def symlink(self, src, dest):
         "Perform a relative symlink"
-        fdebug('%s.symlink' % self.package,
-               {'src':src,
-                'dest':dest})
         def split(path):
             "Splits apart the path into single directory components"
             parts = []
@@ -267,7 +263,6 @@ class Package(object):
 
     def merge(self,dest,src=None):
         "Merge the package into dest"
-        fdebug('merge',locals())
         ignore_control = src is None
         if src is None:
             src = self.package_location
@@ -289,7 +284,6 @@ class Package(object):
 
     def mergeSubDir(self,src,dest,content):
         "Merge the subdirectory content from src to dest"
-        fdebug('mergeSubDir',locals())
         destpath = os.path.join(dest,content)
         srcpath = os.path.join(src,content)
         if srcpath not in self.src_dirs:
@@ -317,7 +311,6 @@ class Package(object):
                             # Retry after the resolve
                             self.mergeSubDir(src,dest,content)
                     else:
-                        debug("%s splitting with %s" % (self, other))
                         self.unsymlink(destpath)
                         os.mkdir(destpath)
                         self.merge(src=srcpath,dest=destpath)
@@ -341,7 +334,6 @@ class Package(object):
 
 
     def mergeNonDir(self, src, dest, content):
-        fdebug('mergeNonDir',locals())
         # src is the stow directory we're merging from
         srcpath = os.path.join( src, content )
         # dest is the target directory that we are dropping
@@ -371,7 +363,6 @@ class Package(object):
 
     def unmerge(self,dest,only_dirs=None):
         "Unmerge the package from dest"
-        fdebug('unmerge',locals())
 
         dest = os.path.realpath(dest)
 
@@ -409,7 +400,6 @@ class Package(object):
                 os.rmdir(dest)
             except:
                 tb = traceback.format_exception( *sys.exc_info() )
-                [debug(x) for x in "".join(tb).split('\n')]
                 print >> sys.stderr, "Unable to remove directory %s:\n %s" % (
                     dest,tb[-1].rstrip())
 
@@ -417,7 +407,6 @@ class Package(object):
 
     def install(self,dest,src=None):
         "Install the package"
-        fdebug('install',locals())
         _src = src
         if _src is None:
             _src = self.package_location
@@ -431,7 +420,6 @@ class Package(object):
 
     def remove(self,dest,src=None):
         "Remove the package"
-        fdebug('remove',locals())
         _src = src
         if _src is None:
             _src = self.package_location

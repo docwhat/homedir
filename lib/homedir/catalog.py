@@ -21,8 +21,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
-import os
+import os, sys
 from homedir.package import *
+
+class MissingPackageError(StandardError): pass
 
 def scanPackages(options):
     """Scan all the package directories, building up a list of packages
@@ -46,3 +48,44 @@ def scanPackages(options):
     os.path.walk(top, walker, None)
 
     return packages
+
+def lookUp(options,*names):
+    """Look up one or more packages; one per string in names"""
+    packages = []
+    bad = []
+    for name in names:
+        if isinstance(name,Package) and \
+           options.packages.has_key(name.package):
+            if name not in packages:
+                packages.append(name)
+        elif options.packages.has_key(name):
+            p = options.packages[name]
+            if p not in packages:
+                packages.append(p)
+        else:
+            bad.append(name)
+    if bad:
+        raise MissingPackageError("Unknown packages: %s" % (",".join(map(str,bad))))
+    return packages
+
+def lookUpOne(options,name):
+    "look up just one name"
+    results = lookUp(options,name)
+    if results:
+        return results[0]
+    else:
+        return None
+
+def scanDepends(options):
+    for package in options.packages.values():
+        if package.depends is None:
+            continue
+        print "NARF %s: %r" % (package.package, package.depends)
+        try:
+            package.depends = [lookUpOne(options,x) for x in package.depends]
+        except MissingPackageError, err:
+            if options.debug:
+                raise AssertionError( "Bad Packages: %s" % ",".join(map(str,bad)))
+            print >> sys.stderr, "In the package '%s': %s" % (package.package, err)
+            sys.exit(1)
+

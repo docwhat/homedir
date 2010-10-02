@@ -33,7 +33,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath
 ##   is accurate or not
 
 VERSION="0.2"
-IGNORE_DIRS=('.svn','CVS','RCS','.git')
 COMMANDS = None # this is set below
 HOME = os.path.expanduser("~/") # easy way to do it
 HOMEDIR = os.path.expanduser("~/.homedir")
@@ -60,26 +59,6 @@ import optparse
 from homedir.package import *
 from homedir.catalog import *
 
-# Debug Mode Helpers
-DEBUG = False
-def debug(*msg):
-    "Either prints a debug message or is a nop, depending on options"
-    if DEBUG:
-        print "DEBUG: %s" % " ".join(map(str,msg))
-
-DEBUG_FUNCTIONS = False
-def fdebug(fname,locals=None):
-    "print out the function call and args in a nice format"
-    if DEBUG_FUNCTIONS:
-        if locals:
-            keys = locals.keys()
-            keys.sort()
-            args = " ".join(["%s==%s" % (key,locals[key]) for key in keys])
-        else:
-            args = ""
-
-        print "   -> %s(%s)" % (fname, args)
-
 # Warn mode helper
 WARN = True
 def warn(*msg):
@@ -105,44 +84,6 @@ def fixDir(dir):
         dir
         ))))
 
-def lookUp(options,*names):
-    """Look up one or more packages; one per string in names"""
-    fdebug('lookUp',locals())
-    packages = []
-    bad = []
-    for name in names:
-        if isinstance(name,Package) and \
-           options.packages.has_key(name.package):
-            if name not in packages:
-                packages.append(name)
-        elif options.packages.has_key(name):
-            p = options.packages[name]
-            if p not in packages:
-                packages.append(p)
-        else:
-            bad.append(name)
-    if bad:
-        if options.debug:
-            raise AssertionError( "Bad Packages: %s" % ",".join(map(str,bad)))
-        print >> sys.stderr, "Unknown packages: %s" % (",".join(map(str,bad)))
-        sys.exit(1)
-    return packages
-
-def lookUpOne(options,name):
-    "look up just one name"
-    fdebug('lookUpOne',locals())
-    results = lookUp(options,name)
-    if results:
-        return results[0]
-    else:
-        return None
-
-def scanDepends(options):
-    for package in options.packages.values():
-        if package.depends is None:
-            continue
-        package.depends = [lookUpOne(options,x) for x in package.depends]
-
 def buildPackageDepends(package,depends=None,ignore=None):
     """ARGS:
     package -- package to find dependencies for
@@ -150,7 +91,6 @@ def buildPackageDepends(package,depends=None,ignore=None):
     ignore  -- packages to ignore (they are being taken care of elsewhere)
 
     Returns depends"""
-    fdebug('buildPackageDepends',locals())
     if depends is None:
         depends = []
     if package.depends:
@@ -163,7 +103,6 @@ def buildPackageDepends(package,depends=None,ignore=None):
 
 def buildDeps(options,*packages):
     "Build up all the dependencies"
-    fdebug('buildDeps',locals())
 
     scanDepends(options)
 
@@ -179,11 +118,6 @@ def scanReverseDepends(options):
         else:
             dependencies = depender.depends
 
-        # Everyone depends on homedir
-        if depender.package != 'homedir' and \
-           not [x for x in dependencies if x == 'homedir']:
-            dependencies.append('homedir')
-
         for dependee in dependencies:
             dependee = lookUpOne(options,dependee)
             if dependee.reverse_depends is None:
@@ -192,7 +126,6 @@ def scanReverseDepends(options):
                 dependee.reverse_depends.append( depender )
 
 def buildPackageReverseDepends(package,reverses=None,ignore=None):
-    fdebug('buildPackageReverseDepends',locals())
     if reverses is None:
         reverses = []
     if package.reverse_depends:
@@ -316,7 +249,6 @@ def actionLoop( func, action, packages ):
 
 def buildRDeps(options,*packages):
     "Build up all the reverse dependencies"
-    fdebug('buildRDeps',locals())
 
     scanReverseDepends(options)
 
@@ -502,16 +434,10 @@ commands:
                       action="store_true", dest="debug",
                       default=False,
                       help="Turn on debugging info")
-    parser.add_option('-D','--debug-functions',
-                      action="store_true", dest="debug_functions",
-                      default=False,
-                      help="Turn on debugging info")
 
     (options,args) = parser.parse_args()
 
-    global DEBUG,DEBUG_FUNCTIONS,WARN
-    DEBUG=options.debug
-    DEBUG_FUNCTIONS=options.debug_functions
+    global WARN
     WARN=options.debug
 
     if not args:

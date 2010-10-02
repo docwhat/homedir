@@ -328,6 +328,10 @@ class Setup:
         if os.path.isdir(pj(self.dir, 'files')):
             os.rename(pj(self.dir, 'files'), pj(self.dir, 'packages'))
 
+        old_homedir = pj(self.dir, 'packages', 'packages', '00homedir')
+        if os.path.isdir(old_homedir):
+            shutil.rmtree(old_homedir, ignore_errors=True)
+
         #shutil.rmtree(pj(self.dir, 'cache'), ignore_errors=True)
 
 
