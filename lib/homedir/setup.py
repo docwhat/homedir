@@ -28,6 +28,9 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+DIRVERSION=2
+def UnknownDirVersion(StandardError): pass
+
 # Monkey Patch os.makedirs
 def makedirs(name, mode=0777):
     """makedirs(path [, mode=0777])
@@ -57,6 +60,40 @@ def makedirs(name, mode=0777):
         # be happy if someone already created the path
         if e.errno != errno.EEXIST:
             raise
+
+def copytree(src, dst):
+    "A copy tree that doesn't copy .git, .svn, etc."
+    names = os.listdir(src)
+    makedirs(dst)
+    errors = []
+    for name in names:
+        if name in set(['.git', '.svn', 'CVS']) or name.endswith('.pyc'):
+            continue
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+            elif os.path.isdir(srcname):
+                copytree(srcname, dstname)
+            else:
+                shutil.copy2(srcname, dstname)
+        except (IOError, os.error), why:
+            errors.append((srcname, dstname, str(why)))
+        except StandardError, err:
+            errors.extend(err.args[0])
+    try:
+        shutil.copystat(src, dst)
+    except OSError, why:
+        if WindowsError is not None and isinstance(why, WindowsError):
+            # Copying file access times may fail on Windows
+            pass
+        else:
+            errors.extend((src, dst, str(why)))
+    if errors:
+        raise Error, errors
+
 
 class MyTarFile(tarfile.TarFile):
 
@@ -92,8 +129,6 @@ class Setup:
         if directory is None:
             directory = os.path.expanduser("~/.homedir")
         self.dir = directory
-        self.repo_dir = os.path.join(directory, 'repos')
-        self.pkg_dir = os.path.join(self.repo_dir, '00required')
 
         self.via_web = via_web
         self.platform = None
@@ -104,113 +139,108 @@ class Setup:
 
         # Here's the script...
         self.createDir()
-        if via_web:
-            self.fetchFiles()
-        else:
-            self.copyFiles()
-
+        self.getFiles()
+        self.installFiles()
         self.fixHashBang()
-        self.installHomedir()
+
+    def detectDirVersion(self):
+        "Detects the version of the .homedir directory"
+        """
+        Versions:
+        0 - No version.
+        1 - Original Homedir as hosted on http://trac.gerf.org/homedir
+        2 - New Homedir.
+        """
+        pj = os.path.join
+        if not os.path.isdir(self.dir):
+            return 0
+        if os.path.isdir(pj(self.dir, 'files')) and \
+           os.path.isdir(pj(self.dir, 'cache')):
+            return 1
+        if os.path.isfile(pj(self.dir, '.version')):
+            f = file(pj(self.dir, '.version'))
+            try:
+                version = f.readline().strip()
+            finally:
+                f.close()
+            return int(version)
+
+        raise UnknownDirVersion("I got no clue what your .homedir is.")
 
     def createDir(self):
         "Create the directory if it doesn't exist. Offer to clean or purge it if it does."
-        if os.path.isdir(self.dir):
-            # TODO: Detect new-style install and just choose 'clean'.
-            print "Hmmm.... You have a directory called: %s" % self.dir
+        try:
+            version = self.detectDirVersion()
+        except UnknownDirVersion:
+            print "You already have a directory called %s" % self.dir
+            print "but I don't know what it is."
             print
             print "I can..."
             print "     ...purge the directory, removing the current contents."
-            print "     ...clean it out, removing the old homedir core files and replace them with new files."
+            print "     or"
             print "     ...quit and let you fix things the way you want."
             print
 
             answer = None
-            while answer not in ['p', 'c', 'q']:
+            while answer not in ['p', 'q']:
                 if answer is not None:
                     print
                     print
-                    print "Please press one of the following letters: p c q"
+                    print "Please press one of the following letters: p q"
                     print
-                sys.stdout.write('Should I [p]urge it, [c]lean it up, or just [q]uit? ')
+                sys.stdout.write('Should I [p]urge it, or just [q]uit? ')
                 answer = self.getch().strip().lower()
 
             print
             if answer == 'p':
                 self.purgeDir(self)
-            elif answer == 'c':
-                self.cleanDir(self)
+                version = 0
             else:
                 print "Goodbye!"
                 sys.exit(0)
-        else:
-            print "I need to create the directory structure..."
-            makedirs(self.pkg_dir)
-            print "%s is all setup!" % self.dir
 
-    def fetchFiles(self):
-        "Retrieve and unpack the files from the web."
-        httplib.HTTPConnection.debuglevel = 1
-        request = urllib2.Request("http://github.com/docwhat/homedir/tarball/master")
-        opener = urllib2.build_opener()
-        f = opener.open(request)
-        z = MyTarFile.open(fileobj=f, mode='r|*')
-        z.extractall(self.pkg_dir)
+        while version < DIRVERSION:
+            getattr(self, "updateVersion%d" % version)()
+            version += 1
+        print "%s is all setup!" % self.dir
 
-    def copyFiles(self, src=None, dst=None):
+    def getFiles(self):
         "Copy files instead of getting them from the web."
-        if src is None and dst is None:
+        dst=os.path.join(self.dir, 'tmp')
+
+        if self.via_web:
+            httplib.HTTPConnection.debuglevel = 1
+            request = urllib2.Request("http://github.com/docwhat/homedir/tarball/master")
+            opener = urllib2.build_opener()
+            f = opener.open(request)
+            z = MyTarFile.open(fileobj=f, mode='r|*')
+            z.extractall(dst)
+        else:
             src = os.path.abspath(__file__)
-            for i in range(5):
+            for i in range(3):
                 src = os.path.dirname(src)
-            dst=self.pkg_dir
+            copytree(src, dst)
 
-        names = os.listdir(src)
-        makedirs(dst)
-        errors = []
-        for name in names:
-            if name in set(['.git', '.svn', 'CVS']) or name.endswith('.pyc'):
-                continue
-            srcname = os.path.join(src, name)
-            dstname = os.path.join(dst, name)
-            try:
-                if os.path.islink(srcname):
-                    linkto = os.readlink(srcname)
-                    os.symlink(linkto, dstname)
-                elif os.path.isdir(srcname):
-                    self.copyFiles(srcname, dstname)
-                else:
-                    shutil.copy2(srcname, dstname)
-            except (IOError, os.error), why:
-                errors.append((srcname, dstname, str(why)))
-            except StandardError, err:
-                errors.extend(err.args[0])
-        try:
-            shutil.copystat(src, dst)
-        except OSError, why:
-            if WindowsError is not None and isinstance(why, WindowsError):
-                # Copying file access times may fail on Windows
-                pass
-            else:
-                errors.extend((src, dst, str(why)))
-        if errors:
-            raise Error, errors
+    def installFiles(self):
+        "This copies the files into their proper location in .homedir and symlinks them into $HOME"
+        pj = os.path.join
+        for e in ('bin', 'lib'):
+            src = pj(self.dir, 'tmp', e)
+            dst = pj(self.dir, e)
+            copytree(src, dst)
 
-    def installHomedir(self):
-        "Install/upgrade homedir's package"
-        print "Setting up homedir..."
-        homedir_path = os.path.join(self.pkg_dir, 'homedir', 'bin', 'homedir')
-        try:
-            retcode = subprocess.call([sys.executable, homedir_path, 'upgrade', 'homedir'])
-            if retcode < 0:
-                print "Hmmm....unable to setup homedir. It returned %d." % retcode
-            else:
-                print "It's setup..."
-        except OSError, e:
-            print "Hmmm...failed to run homedir:", e
+        bindir = os.path.expanduser("~/bin")
+        makedirs(bindir)
+        for e in os.listdir(pj(self.dir, 'bin')):
+            src = pj(os.path.pardir, '.homedir', 'bin', e)
+            dst = pj(bindir, e)
+            if os.path.islink(dst):
+                os.unlink(dst)
+            os.symlink(src, dst)
 
     def fixHashBang(self):
         "Go through all the python scripts and fix the hash-bangs."
-        bindir = os.path.join(self.pkg_dir, 'homedir', 'bin')
+        bindir = os.path.join(self.dir, 'bin')
         for entry in os.listdir(bindir):
             p = os.path.join(bindir, entry)
             if os.path.isfile(p):
@@ -247,6 +277,21 @@ class Setup:
             finally:
                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             return ch
+
+    def updateVersion0(self):
+        "Creates a base .homedir"
+        makedirs(self.dir)
+
+    def updateVersion1(self):
+        "Updates from old style homedir to the new layout."
+        pj = os.path.join
+        makedirs(pj(self.dir, 'bin'))
+        makedirs(pj(self.dir, 'lib'))
+        makedirs(pj(self.dir, 'packages'))
+        if os.path.isfile(pj(self.dir, 'config')):
+            os.rename(pj(self.dir, 'config'), pj(self.dir, 'config-is-nolonger-used'))
+
+        shutil.rmtree(pj(self.dir, 'cache'), ignore_errors=True)
 
 
 if __name__ == "__main__":

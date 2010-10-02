@@ -88,8 +88,8 @@ class Package(object):
     def __eq__(self,other):
         if isinstance(other,self.__class__):
             return self.package_location == other.package_location
-      	elif isinstance(other,str):
-	    return self.package == other
+        elif isinstance(other,str):
+            return self.package == other
         else:
             raise TypeError( "%s cannot be compared to %s" % (
                 self.__class__, type(other)))

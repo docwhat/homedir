@@ -23,7 +23,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 import os, sys, traceback
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), '.homedir', 'lib'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib'))
 
 ## TODO
 ## * unmergeSubDir
@@ -487,17 +487,11 @@ def do_upgrade(options,*packages):
 
     actionLoop( func, 'upgrading', extra + packages )
 
-def do_sync(options):
-    debug("executing '%s' in %s" % (options.synccmd,
-                                    os.getcwd()))
-    os.system( options.synccmd )
-
 
 COMMANDS = {'list': do_list,
             'install': do_install,
             'remove': do_remove,
             'upgrade': do_upgrade,
-            'sync': do_sync,
             }
 
 class Application:
@@ -515,8 +509,7 @@ commands:
   install PKG ...       Install a package.
   remove PKG ...        Uninstall a package.
   upgrade PKG ...       Upgrade your installed packages (reinstall).
-  list                  List all packages.
-  sync                  Use synccmd to syncronize the repository."""
+  list                  List all packages."""
     parser = optparse.OptionParser(version=VERSION, usage=usage)
 
     parser.add_option("-c","--config",
@@ -540,10 +533,6 @@ commands:
                       action="store_true", dest="debug_functions",
                       default=False,
                       help="Turn on debugging info")
-    parser.add_option('-s','--sync',
-                      action="store_true", dest="do_sync",
-                      default=False,
-                      help="Do a sync prior to executing a command")
 
     (options,args) = parser.parse_args()
 
@@ -553,7 +542,6 @@ commands:
     WARN=options.debug
 
     packagedirs = options.packagedirs = []
-    options.synccmd = 'echo No synccmd defined'
     # Setup the config file
     try:
         fp = file(os.path.expanduser(options.config),'r')
@@ -577,8 +565,6 @@ commands:
                 elif not options.quiet:
                     print >> sys.stderr, "%s:%d  " %(options.config,num) + \
                           "ignoring packages directory '%s': does not exist" % val
-            elif var == 'synccmd':
-                options.synccmd = os.path.expanduser(os.path.expandvars(val))
             else:
                 print >> sys.stderr, "%s:%d  invalid variable: '%s'" % (options.config,
                                                                         num, var)
@@ -631,11 +617,6 @@ if "__main__" == __name__:
         options, args = doParse()
         command = args[0]
         rest_args = args[1:]
-        if options.do_sync:
-            if command == 'sync':
-                warn("Ignoring silly request to sync prior to doing a sync")
-            else:
-                do_sync(options)
         scanPackages(options)
 
         COMMANDS[command](options,*rest_args)
