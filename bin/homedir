@@ -34,11 +34,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath
 
 VERSION="0.2"
 IGNORE_DIRS=('.svn','CVS','RCS','.git')
-STANDARDSVERSION = 1
 COMMANDS = None # this is set below
 HOME = os.path.expanduser("~/") # easy way to do it
 HOMEDIR = os.path.expanduser("~/.homedir")
-HOMEDIRCONFIG = os.path.join(HOMEDIR,"config")
 
 ###
 ### Version Check
@@ -60,6 +58,7 @@ It will update your copy of homedir and fix the path to python.
 
 import optparse
 from homedir.package import *
+from homedir.catalog import *
 
 # Debug Mode Helpers
 DEBUG = False
@@ -105,33 +104,6 @@ def fixDir(dir):
         os.path.normcase(
         dir
         ))))
-
-def scanPackages(options):
-    """Scan all the package directories, building up a list of packages
-    """
-    fdebug("scanPackages",locals())
-    packages = options.packages = {}
-    locations = options.package_locations = {}
-    for topdir in options.packagedirs:
-        topdir = fixDir(topdir)
-        for pdir in os.listdir(topdir):
-            ppath = os.path.join(topdir,pdir)
-            if os.path.isdir(ppath):
-                if pdir in IGNORE_DIRS:
-                    continue
-                try:
-                    package = Package(ppath)
-                except NotPackageError,err:
-                    debug("Ignoring %s; %s" % (ppath,err))
-                    continue
-                packages[package.package] = package
-                locations[package.package_location] = package
-
-    if DEBUG:
-        # Assertion - There should be no packages left that are strs
-        for n,p in options.packages.items():
-            if isinstance(p,str):
-                raise AssertionError("%s is a string %s" % (n,p))
 
 def lookUp(options,*names):
     """Look up one or more packages; one per string in names"""
@@ -487,11 +459,16 @@ def do_upgrade(options,*packages):
 
     actionLoop( func, 'upgrading', extra + packages )
 
+def do_setup(options):
+    from homedir.setup import Setup
+    Setup(via_web=True)
+
 
 COMMANDS = {'list': do_list,
             'install': do_install,
             'remove': do_remove,
             'upgrade': do_upgrade,
+            'setup': do_setup,
             }
 
 class Application:
@@ -505,17 +482,13 @@ def doParse():
     usage = """%prog [options] <command> arg(s)
 
 commands:
-  setup                 Install, upgrade, or configure homedir.
+  setup                 Install or upgrade homedir.
   install PKG ...       Install a package.
   remove PKG ...        Uninstall a package.
   upgrade PKG ...       Upgrade your installed packages (reinstall).
   list                  List all packages."""
     parser = optparse.OptionParser(version=VERSION, usage=usage)
 
-    parser.add_option("-c","--config",
-                      action="store", dest="config",
-                      default=HOMEDIRCONFIG,
-                      help="User configuration file")
     parser.add_option('-q','--quiet',
                       action="store_true", dest="quiet",
                       default=False,
@@ -540,69 +513,6 @@ commands:
     DEBUG=options.debug
     DEBUG_FUNCTIONS=options.debug_functions
     WARN=options.debug
-
-    packagedirs = options.packagedirs = []
-    # Setup the config file
-    try:
-        fp = file(os.path.expanduser(options.config),'r')
-        num = 0
-        for line in fp.readlines():
-            num+=1
-            line = line.strip()
-            if line == '' or line.startswith('#') or line.startswith(';'):
-                continue
-            try:
-                var,val = line.split('=',1)
-            except ValueError:
-                print >> sys.stderr, "%s:%d  syntax error:\n%s" % (options.config,
-                                                                   num,line)
-                sys.exit(1)
-            var = var.strip().lower()
-            val = val.strip()
-            if var == 'packages':
-                if os.path.isdir(fixDir(val)):
-                    packagedirs.append( val )
-                elif not options.quiet:
-                    print >> sys.stderr, "%s:%d  " %(options.config,num) + \
-                          "ignoring packages directory '%s': does not exist" % val
-            else:
-                print >> sys.stderr, "%s:%d  invalid variable: '%s'" % (options.config,
-                                                                        num, var)
-                sys.exit(1)
-        fp.close()
-        if not packagedirs:
-            raise IOError("No package directives found")
-    except IOError,err:
-        example = [
-            '# Comments begin with pound signs',
-            '# You may put as many package directory lines as you want',
-            'packages = ~/files/homedir/packages',
-            'packages = ~/files/homedir/personal',
-            ]
-        if options.config == HOMEDIRCONFIG and \
-           not os.path.exists(HOMEDIRCONFIG):
-            # Make this to make life easier
-            try:
-                os.mkdir(os.path.dirname(HOMEDIRCONFIG))
-            except:
-                pass
-            fp = file(HOMEDIRCONFIG,'w')
-            fp.write("# This is the homedir config file.\n#\n")
-            fp.write( "".join( ["# %s\n" % x for x in example] ) )
-            fp.write( "#\n" )
-            fp.close
-
-
-        print >> sys.stderr, "%s: %s" % (err.args[-1],options.config)
-        print >> sys.stderr, """
-Example config file:
--------------------8<--------cut-------->8-------------------
-%s
--------------------8<--------cut-------->8-------------------
-""" % \
-            "\n".join( example )
-        parser.print_help()
-        sys.exit(1)
 
     if not args:
         parser.print_help()

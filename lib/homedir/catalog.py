@@ -21,6 +21,28 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
-__all__ = ( 'package', 'setup', 'catalog')
+import os
+from homedir.package import *
 
-# vim: set sw=4 ts=4 expandtab
+def scanPackages(options):
+    """Scan all the package directories, building up a list of packages
+    """
+    top = os.path.expanduser("~/.homedir/packages")
+
+    packages = options.packages = {}
+
+    def walker(arg, dirname, fnames):
+        try:
+            package = Package(dirname)
+            packages[package.package] = package
+            while len(fnames) > 0:
+                del fnames[0]
+        except NotPackageError,err:
+            for i in range(len(fnames)-1, 0-1, -1):
+                fname = fnames[i]
+                if fname.startswith('.'):
+                    del fnames[i]
+
+    os.path.walk(top, walker, None)
+
+    return packages

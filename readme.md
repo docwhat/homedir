@@ -46,4 +46,24 @@ This is being worked on.  A new version will be done soon.
 also done something similar and written two articles about it:
   * [CVS homedir, or keeping your life in CVS](http://kitenet.net/~joey/cvshome.html)
   * [Subversion Users: home directory in svn?](http://www.kitenet.net/~joey/svnhome.html)
-  
+
+## Changes since version 1
+
+The original HomeDir, which was hosted on trac.gerf.org, is going to be considered version 1.
+
+### No Configuration File
+
+Version 1 had a configuration file that kept track of where your packages were located.
+
+In this new version packages can be placed anyplace under the directory
+`~/.homedir/packages` (except inside another package, of course).
+
+This allows for more flexability for managing packages.
+
+This also means that sync/synccmd is no longer supported.
+
+### Setup/Upgrade
+
+This new version is much easier to keep up-to-date.  Just execute the command `homedir setup` and it'll
+get the latest version from GitHub.
+

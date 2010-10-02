@@ -29,7 +29,8 @@ except ImportError:
     from StringIO import StringIO
 
 DIRVERSION=2
-def UnknownDirVersion(StandardError): pass
+class UnknownDirVersion(StandardError):
+    pass
 
 # Monkey Patch os.makedirs
 def makedirs(name, mode=0777):
@@ -94,6 +95,8 @@ def copytree(src, dst):
     if errors:
         raise Error, errors
 
+def msg(s):
+    print " * %s" % s
 
 class MyTarFile(tarfile.TarFile):
 
@@ -133,15 +136,25 @@ class Setup:
         self.via_web = via_web
         self.platform = None
 
-        print "Hey, thanks for trying out HomeDir!"
+        print "Setting up HomeDir!"
         print
-        print "Let's see what we need to do..."
 
         # Here's the script...
         self.createDir()
         self.getFiles()
         self.installFiles()
         self.fixHashBang()
+        self.cleanup()
+        msg("Done!")
+
+        print
+        bindir = os.path.expanduser("~/bin")
+        if bindir in os.getenv('PATH', '').split(os.pathsep):
+            print "You're all setup and can now run the command 'homedir'."
+        else:
+            print "HomeDir is installed, however $HOME/bin is not in your PATH."
+            print "You can either manually run HomeDir from your directory or"
+            print "you can modify your shell startup scripts to include ~/bin"
 
     def detectDirVersion(self):
         "Detects the version of the .homedir directory"
@@ -165,6 +178,7 @@ class Setup:
                 f.close()
             return int(version)
 
+        print UnknownDirVersion("I got no clue what your .homedir is.")
         raise UnknownDirVersion("I got no clue what your .homedir is.")
 
     def createDir(self):
@@ -199,16 +213,23 @@ class Setup:
                 print "Goodbye!"
                 sys.exit(0)
 
+        msg("Updating directory...")
         while version < DIRVERSION:
             getattr(self, "updateVersion%d" % version)()
             version += 1
-        print "%s is all setup!" % self.dir
+        f = file(os.path.join(self.dir, '.version'), 'w')
+        try:
+            f.write("%d%s" % (DIRVERSION, os.linesep))
+        finally:
+            f.close()
 
     def getFiles(self):
         "Copy files instead of getting them from the web."
+        shutil.rmtree(os.path.join(self.dir, 'tmp'), ignore_errors=True)
         dst=os.path.join(self.dir, 'tmp')
 
         if self.via_web:
+            msg("Fetching latest version of homedir...")
             httplib.HTTPConnection.debuglevel = 1
             request = urllib2.Request("http://github.com/docwhat/homedir/tarball/master")
             opener = urllib2.build_opener()
@@ -216,6 +237,7 @@ class Setup:
             z = MyTarFile.open(fileobj=f, mode='r|*')
             z.extractall(dst)
         else:
+            msg("Copying homedir from files...")
             src = os.path.abspath(__file__)
             for i in range(3):
                 src = os.path.dirname(src)
@@ -223,10 +245,12 @@ class Setup:
 
     def installFiles(self):
         "This copies the files into their proper location in .homedir and symlinks them into $HOME"
+        msg("Installing files...")
         pj = os.path.join
         for e in ('bin', 'lib'):
             src = pj(self.dir, 'tmp', e)
             dst = pj(self.dir, e)
+            shutil.rmtree(dst, ignore_errors=True)
             copytree(src, dst)
 
         bindir = os.path.expanduser("~/bin")
@@ -240,6 +264,7 @@ class Setup:
 
     def fixHashBang(self):
         "Go through all the python scripts and fix the hash-bangs."
+        msg("Fixing hashbangs...")
         bindir = os.path.join(self.dir, 'bin')
         for entry in os.listdir(bindir):
             p = os.path.join(bindir, entry)
@@ -252,6 +277,10 @@ class Setup:
                     fd = file(p, 'w')
                     fd.write(data)
                 fd.close()
+
+    def cleanup(self):
+        pj = os.path.join
+        shutil.rmtree(pj(self.dir, 'tmp'), ignore_errors=True)
 
     def getch(self):
         "Returns a single character"
@@ -291,7 +320,15 @@ class Setup:
         if os.path.isfile(pj(self.dir, 'config')):
             os.rename(pj(self.dir, 'config'), pj(self.dir, 'config-is-nolonger-used'))
 
-        shutil.rmtree(pj(self.dir, 'cache'), ignore_errors=True)
+        # We don't need these.
+        shutil.rmtree(pj(self.dir, 'files', 'unittest'), ignore_errors=True)
+        if os.path.isfile(pj(self.dir, 'files', 'setup')):
+            os.unlink(pj(self.dir, 'files', 'setup'))
+
+        if os.path.isdir(pj(self.dir, 'files')):
+            os.rename(pj(self.dir, 'files'), pj(self.dir, 'packages'))
+
+        #shutil.rmtree(pj(self.dir, 'cache'), ignore_errors=True)
 
 
 if __name__ == "__main__":

@@ -21,12 +21,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
+import os
+
 __all__ = ('NotPackageError', 'ConflictError', 'Package',
-           'CONTROLDIR', 'CONTROLFILENAME', 'OLD_CONTROLFILENAME' )
+           'CONTROLDIR', 'CONTROLFILENAME', 'OLD_CONTROLFILENAME', 'PKG_VERSION' )
 
 CONTROLDIR = ".homedir"
 CONTROLFILENAME = "control"
 OLD_CONTROLFILENAME = ".homedir.control"
+PKG_VERSION = 1
 
 # Error Classes
 class NotPackageError(StandardError):
@@ -168,7 +171,7 @@ class Package(object):
             d.extend( [x.strip() for x in val.split(',') if x] )
         elif attr == 'standards-version':
             val = int(val)
-            if val != STANDARDSVERSION:
+            if val != PKG_VERSION:
                 raise NotPackageError("Invalid control file version: %s" % file)
             self.standard_version = val
         elif attr in self._attributes:
