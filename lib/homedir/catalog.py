@@ -80,7 +80,6 @@ def scanDepends(options):
     for package in options.packages.values():
         if package.depends is None:
             continue
-        print "NARF %s: %r" % (package.package, package.depends)
         try:
             package.depends = [lookUpOne(options,x) for x in package.depends]
         except MissingPackageError, err:

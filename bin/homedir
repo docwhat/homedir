@@ -56,15 +56,11 @@ It will update your copy of homedir and fix the path to python.
     sys.exit(1)
 
 import optparse
-from homedir.package import *
-from homedir.catalog import *
-
-# Warn mode helper
-WARN = True
-def warn(*msg):
-    "Either prints a warning message or is a nop, depending on options"
-    if WARN:
-        print "WARN: %s" % " ".join(map(str,msg))
+from homedir.package  import *
+from homedir.catalog  import *
+from homedir.pathname import Pathname
+from homedir.setup    import getch
+from homedir.handle   import warn, warn_mode
 
 def pluralize(singular,plural,count):
     "Returns the correct form of a word, based on count"
@@ -140,40 +136,45 @@ class resolveConflict:
     counter = 0
     def __call__(package, src, dst):
         "Ask the user to resolve any conflicts"
+        assert(isinstance(src, Pathname))
+        assert(isinstance(dst, Pathname))
         if not package.counter:
             print "[conflict]"
         package.counter += 1
 
-        legit_answers = ['x','c','d','s']
+        legit_answers = ['c','d','s']
 
         # Information about the source
         src_display = None
-        if os.path.isdir(src):
+        if src.isdir():
             src_display = "I want to replace it with a directory"
-        elif os.path.exists(src):
+        elif src.exists():
             src_display = "I want to replace it with a file"
 
 
         # Possible move candidate
-        dstmove = "%s.bak" % dst
-        if os.path.exists(dstmove):
+        dstmove = Pathname("%s.bak" % dst)
+        if dstmove.exists():
             legit_answers.append('o')
         else:
             legit_answers.append('r')
+        legit_answers.append('q')
 
         # Collect possible extra information
         dst_display = dst
-        if os.path.isdir(dst):
+        if dst.isdir():
             ftype = "dir"
-        elif os.path.exists(dst):
+        elif dst.islink():
+            ftype = 'symlink'
+        elif dst.exists():
             ftype = "file"
         else:
             ftype = "????"
 
         link_display = None
-        if os.path.islink(dst):
-            link_display = "The symlink points to '%s'" % os.readlink(dst)
-            if os.path.exists(dst):
+        if dst.islink():
+            link_display = "The symlink points to '%s'" % dst.readlink()
+            if dst.exists():
                 link_display += " (a %s)." % ftype
                 ftype = "symlink"
             else:
@@ -195,37 +196,39 @@ class resolveConflict:
             if src_display:
                 print "              %s" % src_display
             print "    I can do the following:"
-            print "       x - exit"
             print "       c - cancel package"
             print "       d - destroy the current file"
             print "       s - skip file"
             if 'r' in legit_answers:
-                print "       r - rename '%s' to '%s'" % (dst,os.path.basename(dstmove))
+                print "       r - rename '%s' to '%s'" % (dst,dstmove.basename())
             if 'o' in legit_answers:
-                print "       o - rename '%s' to '%s', over-writing the existing .bak file" % (dst,os.path.basename(dstmove))
+                print "       o - rename '%s' to '%s', over-writing the existing .bak file" % (dst,dstmove.basename())
+            print "       q - quit"
             print "    Your choice? [%s] " % "/".join(legit_answers),
-            answer = sys.stdin.readline().strip().lower()
+            answer = getch().strip().lower()
+            if answer == '!':
+                raise StandardError('You triggered a debugging feature!')
 
-        if answer == 'x':
+        if answer == 'q':
             print "Okay then, quitting..."
             sys.exit(0)
         elif answer == 'c':
             raise ConflictError(src=src, dst=dst)
         elif answer == 'd':
-            if os.path.exists(dst):
-                os.unlink(dst)
+            if dst.exists():
+                dst.unlink()
             return True
         elif answer == 's':
             return False
         elif answer == 'r':
-            if os.path.exists(dstmove):
+            if dstmove.exists():
                 raise ConflictError("A file has prevented backup %s"%dstmove,
                                     src=src, dst=dst)
             os.rename(dst,dstmove)
             return True
         elif answer == 'o':
-            if os.path.exists(dstmove):
-                os.unlink(dstmove)
+            if dstmove.exists():
+                dstmove.unlink()
             os.rename(dst,dstmove)
             return True
         else:
@@ -433,8 +436,7 @@ commands:
 
     (options,args) = parser.parse_args()
 
-    global WARN
-    WARN=options.debug
+    warn_mode(options.debug)
 
     if not args:
         parser.print_help()

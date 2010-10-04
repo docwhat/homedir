@@ -21,6 +21,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
-__all__ = ( 'package', 'setup', 'catalog', 'handle', 'pathname' )
+__all__ = ( 'warn_mode', 'warn' )
 
-# vim: set sw=4 ts=4 expandtab
+# Warn mode helper
+WARN = False
+
+def warn_mode(mode):
+    "Set the mode to true or false."
+    WARN = bool(mode)
+
+def warn(*msg):
+    "Either prints a warning message or is a nop, depending on options"
+    if WARN:
+        print "WARN: %s" % " ".join(map(str,msg))
+

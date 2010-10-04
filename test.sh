@@ -3,7 +3,7 @@
 set -eu
 
 myhome="${HOME}"
-export HOME=/tmp/narf
+export HOME=/tmp/test-homedir-$$
 export PATH="${HOME}/bin:${PATH}"
 
 function run0 {

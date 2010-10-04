@@ -32,6 +32,40 @@ DIRVERSION=2
 class UnknownDirVersion(StandardError):
     pass
 
+def getch():
+    "Returns a single character"
+    if getch.platform is None:
+        try:
+            # Window's python?
+            import msvcrt
+            getch.platform = 'windows'
+        except ImportError:
+            # Fallback...
+            try:
+                import tty, termios
+                fd = sys.stdin.fileno()
+                old_settings = termios.tcgetattr(fd)
+                getch.platform = 'unix'
+            except termios.error:
+                getch.platform = 'dumb'
+
+    if getch.platform == 'windows':
+        import msvcrt
+        return msvcrt.getch()
+    elif getch.platform == 'unix':
+        import tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+    else:
+        return sys.stdin.read(1).strip().lower()
+getch.platform = None
+
 # Monkey Patch os.makedirs
 def makedirs(name, mode=0777):
     """makedirs(path [, mode=0777])
@@ -134,7 +168,6 @@ class Setup:
         self.dir = directory
 
         self.via_web = via_web
-        self.platform = None
 
         print "Setting up HomeDir!"
         print
@@ -203,7 +236,7 @@ class Setup:
                     print "Please press one of the following letters: p q"
                     print
                 sys.stdout.write('Should I [p]urge it, or just [q]uit? ')
-                answer = self.getch().strip().lower()
+                answer = getch().strip().lower()
 
             print
             if answer == 'p':
@@ -285,31 +318,6 @@ class Setup:
     def cleanup(self):
         pj = os.path.join
         shutil.rmtree(pj(self.dir, 'tmp'), ignore_errors=True)
-
-    def getch(self):
-        "Returns a single character"
-        if self.platform is None:
-            try:
-                # Window's python?
-                import msvcrt
-                self.platform = 'windows'
-            except ImportError:
-                # Fallback...
-                self.platform = 'unix'
-
-        if self.platform == 'windows':
-            import msvcrt
-            return msvcrt.getch()
-        else:
-            import tty, termios
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            try:
-                tty.setraw(sys.stdin.fileno())
-                ch = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            return ch
 
     def updateVersion0(self):
         "Creates a base .homedir"

@@ -22,6 +22,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
 import os, sys, traceback
+from homedir.handle import warn
+from homedir.pathname import Pathname
 
 __all__ = ('NotPackageError', 'ConflictError', 'Package',
            'CONTROLDIR', 'CONTROLFILENAME', 'OLD_CONTROLFILENAME', 'PKG_VERSION' )
@@ -74,14 +76,14 @@ class Package(object):
                    'ubuntu-packages')
 
     def __init__(self, directory):
-        self.package_location = os.path.realpath(directory)
+        self.package_location = directory = Pathname(directory)
 
         # Find the control directory, supporting the old name.
-        control = os.path.join(directory,CONTROLDIR,CONTROLFILENAME)
-        if not os.path.exists(control):
-            control = os.path.join(directory,OLD_CONTROLFILENAME)
+        control = directory + CONTROLDIR + CONTROLFILENAME
+        if not control.isfile():
+            control = directory + OLD_CONTROLFILENAME
 
-        if not os.path.exists(control):
+        if not control.isfile():
             raise NotPackageError("No control file")
         self._parse(control)
 
@@ -100,7 +102,7 @@ class Package(object):
 
     def _parse(self,control):
         curr = None
-        fp = file(control,'r')
+        fp = file(unicode(control),'r')
         num = 0
         for line in fp.readlines():
             num += 1
@@ -151,13 +153,13 @@ class Package(object):
         src_dirs = self.src_dirs = []
         if self.dirs:
             for directory in self.dirs:
-                src_dirs.append(os.path.join(self.package_location,directory))
+                src_dirs.append(self.package_location + directory)
 
         # List of real locations of diretories to make in src
         src_mkdirs = self.src_mkdirs = []
         if self.mkdirs:
             for mkdir in self.mkdirs:
-                src_mkdirs.append(os.path.join(self.package_location,mkdir))
+                src_mkdirs.append(self.package_location + mkdir)
 
     def _attribute_set(self,attr,val,file,linenum):
         "Internal Method to set an attribute"
@@ -202,38 +204,19 @@ class Package(object):
 
     def unsymlink(self,file):
         "Helper method to remove a symlink and only symlinks"
-        if os.path.islink(file):
-            os.unlink(file)
-        elif os.path.exists(file):
+        assert(isinstance(file,Pathname))
+        if file.islink():
+            file.unlink()
+        elif file.exists():
             raise AssertionError("%s is not a symlink" % file)
         # else: It must not exist!
 
-    def symlink(self, src, dest):
+    def symlink(self, src, dst):
         "Perform a relative symlink"
-        def split(path):
-            "Splits apart the path into single directory components"
-            parts = []
-            parent, child = os.path.split(path)
-            while child != '':
-                parts.insert(0,child)
-                parent, child = os.path.split(parent)
-            return parts
 
-        # To be user friendly, we'll keep the case here
-        srclist = split(os.path.abspath(src))
-        destlist = split(os.path.abspath(dest))
-
-        while srclist[0] == destlist[0]:
-            # Remove matching parts from the start of the path
-            srclist.pop(0)
-            destlist.pop(0)
-
-        if len(destlist) >= 2:
-            for i in range(0,len(destlist)-1):
-                srclist.insert(0,os.pardir)
-
-        os.symlink(os.path.join(*srclist),
-                   dest)
+        assert(isinstance(src, Pathname))
+        assert(isinstance(dst, Pathname))
+        src.relative_path_from(dst.dirname()).symlink(dst)
 
     def short_description():
         doc = "Just the first line of the description"
@@ -265,39 +248,42 @@ class Package(object):
         ignore_control = src is None
         if src is None:
             src = self.package_location
-        dest = os.path.realpath(dest)
-        for content in os.listdir(src):
+        assert(isinstance(src, Pathname))
+        assert(isinstance(dest, Pathname))
+        dest = dest.realpath()
+        for content in src.listdir():
             if content in IGNORE_DIRS:
                 continue
             if ignore_control and (content == CONTROLDIR or content == OLD_CONTROLFILENAME):
                 continue
-            if os.path.isdir(os.path.join(src,content)):
+            if (src + content).isdir():
                 self.mergeSubDir(src,dest,content)
             else:
                 self.mergeNonDir(src,dest,content)
 
     def isWithinLocation(self, path):
         "Returns true if path is within our package location"
-        loc = "%s%s" % (self.package_location.rstrip(os.sep),os.sep)
-        return path.startswith(loc)
+        assert(isinstance(path, Pathname))
+        return path.is_subdir_of(self.package_location)
 
     def mergeSubDir(self,src,dest,content):
         "Merge the subdirectory content from src to dest"
-        destpath = os.path.join(dest,content)
-        srcpath = os.path.join(src,content)
+        assert(isinstance(src, Pathname))
+        assert(isinstance(dest, Pathname))
+        destpath = dest + content
+        srcpath = src + content
         if srcpath not in self.src_dirs:
             return # We skip stuff not in directories
-        if srcpath in self.src_mkdirs and \
-           not os.path.exists(destpath):
+        if srcpath in self.src_mkdirs and not destpath.exists():
             os.mkdir(destpath)
-        if os.path.islink( destpath ):
-            linkpath = os.path.realpath( destpath )
+        if destpath.islink():
+            linkpath = destpath.realpath()
             if self.isWithinLocation(linkpath):
                 # This is fine.  The link is actually one of ours.
                 # Nuke it to make sure it's correct
                 self.unsymlink(destpath)
                 self.symlink(srcpath,destpath)
-            elif os.path.exists(destpath):
+            elif destpath.exists():
                 if linkpath == srcpath:
                     warn( "%s already points to %s" % (destpath,
                                                        srcpath) )
@@ -321,8 +307,8 @@ class Package(object):
                 if self._resolveConflict(src=srcpath, dst=destpath):
                     self.unsymlink(destpath)
                     self.symlink(srcpath,destpath)
-        elif os.path.exists(destpath):
-            if os.path.isdir(destpath):
+        elif destpath.exists():
+            if destpath.isdir():
                 self.merge(src=srcpath,dest=destpath)
             else:
                 if self._resolveConflict(src=srcpath, dst=destpath):
@@ -333,15 +319,18 @@ class Package(object):
 
 
     def mergeNonDir(self, src, dest, content):
+        assert(isinstance(src, Pathname))
+        assert(isinstance(dest, Pathname))
+
         # src is the stow directory we're merging from
-        srcpath = os.path.join( src, content )
+        srcpath = src + content
         # dest is the target directory that we are dropping
         # symlinks into
-        destpath = os.path.join( dest, content )
+        destpath = dest + content
 
-        if os.path.islink(destpath):
-            linkpath = os.path.realpath( destpath )
-            if os.path.exists(linkpath):
+        if destpath.islink():
+            linkpath = destpath.realpath()
+            if linkpath.exists():
                 if self.isWithinLocation(linkpath):
                     warn( "%s already points to %s" % (destpath,
                                                        srcpath) )
@@ -353,7 +342,7 @@ class Package(object):
                 # It's a broken symlink and safe to nuke it (yes?)
                 self.unsymlink(destpath)
                 self.symlink(srcpath,destpath)
-        elif os.path.exists(destpath):
+        elif destpath.exists():
             if self._resolveConflict(src=srcpath, dst=destpath):
                 self.symlink(srcpath,destpath)
             # otherwise, we're skipping the conflict
@@ -409,12 +398,17 @@ class Package(object):
         _src = src
         if _src is None:
             _src = self.package_location
-        preflight = os.path.join(_src,CONTROLDIR,'pre-install');
-        if os.access(preflight, os.X_OK):
+        else:
+            _src = Pathname(_src)
+        dest = Pathname(dest)
+        preflight = _src + CONTROLDIR + 'pre-install'
+        if preflight.access(os.X_OK):
             os.system(preflight)
+
         self.merge(dest,src)
-        postflight = os.path.join(_src,CONTROLDIR,'post-install');
-        if os.access(postflight, os.X_OK):
+
+        postflight = _src + CONTROLDIR + 'post-install'
+        if postflight.access(os.X_OK):
             os.system(postflight)
 
     def remove(self,dest,src=None):
@@ -422,12 +416,18 @@ class Package(object):
         _src = src
         if _src is None:
             _src = self.package_location
-        preflight = os.path.join(_src,CONTROLDIR,'pre-remove');
-        if os.access(preflight, os.X_OK):
+        else:
+            _src = Pathname(_src)
+        dest = Pathname(dest)
+
+        preflight = _src + CONTROLDIR + 'pre-remove'
+        if preflight.access(os.X_OK):
             os.system(preflight)
+
         self.unmerge(dest,src)
-        postflight = os.path.join(_src,CONTROLDIR,'post-remove');
-        if os.access(postflight, os.X_OK):
+
+        postflight = _src + CONTROLDIR + 'post-remove'
+        if postflight.access(os.X_OK):
             os.system(postflight)
 
 # vim: set sw=4 ts=4 expandtab
