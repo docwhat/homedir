@@ -223,6 +223,10 @@ class Setup:
         finally:
             f.close()
 
+    def purgeDir(self):
+        "Deletes the current ~/.homedir directory."
+        shutil.rmtree(os.path.join(self.dir), ignore_errors=True)
+
     def getFiles(self):
         "Copy files instead of getting them from the web."
         shutil.rmtree(os.path.join(self.dir, 'tmp'), ignore_errors=True)
