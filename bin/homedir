@@ -257,10 +257,6 @@ def buildRDeps(options,*packages):
         buildPackageReverseDepends(package,allpkgs,ignore=packages)
     return allpkgs
 
-
-
-
-
 def do_list(options):
     "Do the list command"
     items = options.packages.items()

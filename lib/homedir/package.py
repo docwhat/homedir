@@ -21,7 +21,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
-import os
+import os, sys, traceback
 
 __all__ = ('NotPackageError', 'ConflictError', 'Package',
            'CONTROLDIR', 'CONTROLFILENAME', 'OLD_CONTROLFILENAME', 'PKG_VERSION' )
@@ -195,7 +195,6 @@ class Package(object):
             raise AssertionError("Invalid Attribute %s: %s:%d" % (attr,file,linenum))
 
     def _resolveConflict(self,src,dst):
-        success = False
         if self.conflict_resolver:
             return self.conflict_resolver(src,dst)
         else:

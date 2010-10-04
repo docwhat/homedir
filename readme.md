@@ -4,6 +4,18 @@ Do you have a home directory? Want to keep it sane, safe, and easy to use on mul
 
 Then you want HomeDir!
 
+## What is homedir?
+
+It is, in essence, a package manager for your home directory.
+
+It stores *packages* in your `~/.homedir/packages` directory.  These packages can be pulled from my 
+[examples](http://github.com/docwhat/homedir-examples) or you can set up your own!
+
+This allows you to:
+
+* Version control your home directory files.  Your home directory files represent lots and lots of effort. Why wouldn't you want them archived?
+* Share home directory files across multiple hosts.  It's much nicer when all the systems you work on behave the same.
+
 ## The Story So Far…
 
 Since about 1999 I've been keeping my home directory config files in

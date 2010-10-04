@@ -297,7 +297,7 @@ class Setup:
             import msvcrt
             return msvcrt.getch()
         else:
-            import sys, tty, termios
+            import tty, termios
             fd = sys.stdin.fileno()
             old_settings = termios.tcgetattr(fd)
             try:
