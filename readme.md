@@ -16,6 +16,26 @@ This allows you to:
 * Version control your home directory files.  Your home directory files represent lots and lots of effort. Why wouldn't you want them archived?
 * Share home directory files across multiple hosts.  It's much nicer when all the systems you work on behave the same.
 
+## Requirements
+
+You must have python 2.5 or newer.
+
+## Quick Start
+
+If you've never used HomeDir, then just run this from the command line:
+
+    curl -o- http://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py | python
+
+If you don't have curl, then just download (usually right-click and then select "save as...") the file [setup.py](http://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py) and run it with your copy of python.
+
+If you already have `~/bin` in your path, then homedir will "Just Work™".
+
+### Previous HomeDir users
+
+If you've using the pre-2.0 version of HomeDir (hosted on trac.gerf.org) then you should back up your .homedir directory before running the above `setup.py` script.
+
+The main change is that everything in `~/.homedir/files` has been moved to `~/.homedir/packages` and the packages will no longer be automatically updated.
+
 ## The Story So Far…
 
 Since about 1999 I've been keeping my home directory config files in
@@ -43,26 +63,6 @@ A [friend](http://willnorris.com/) pointed out that the most important
 part was the package manager.  The various .dotfiles are interesting
 to look at, but most people have their own.  So I moved just the
 package manager portion to [github](http://github.com/)
-
-## Requirements
-
-You must have python 2.5 or newer.
-
-## Quick Start
-
-If you've never used HomeDir, then just run this from the command line:
-
-    curl -O- http://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py | python
-
-If you don't have curl, then just download [setup.py](http://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py) and run it with your copy of python.
-
-If you already have `~/bin` in your path, then homedir will "Just Work™".
-
-### Previous HomeDir users
-
-If you've using the pre-2.0 version of HomeDir (hosted on trac.gerf.org) then you should back up your .homedir directory before running the above `setup.py` script.
-
-The main change is that everything in `~/.homedir/files` has been moved to `~/.homedir/packages` and the packages will no longer be automatically updated.
 
 ## Similar Ideas
 
