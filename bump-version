@@ -1,0 +1,31 @@
+#!/usr/bin/python -utWall
+
+import os, sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib'))
+
+from homedir.pathname import *
+
+homedir = Pathname(__file__).dirname() + 'bin' + 'homedir'
+
+data = []
+f = homedir.open('r')
+try:
+    for line in f.readlines():
+        line = line.rstrip()
+        if line.startswith('VERSION="'):
+            ver = line[len('VERSION="'):-1]
+            major, minor = [int(x) for x in ver.split('.')]
+            minor = minor + 1
+            line = 'VERSION="%d.%d"' % (major, minor)
+        data.append(line)
+finally:
+    f.close()
+
+f = homedir.open('w')
+try:
+    for line in data:
+        f.write(line)
+        f.write("\n")
+finally:
+    f.close()
