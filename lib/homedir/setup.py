@@ -280,6 +280,28 @@ class Setup:
                 src = os.path.dirname(src)
             copytree(src, dst)
 
+            # Patch the version in homedir...
+            msg("Patching version...")
+            data = []
+            f = file(os.path.join(dst, 'bin', 'homedir'), 'r')
+            try:
+                for line in f.readlines():
+                    line = line.rstrip()
+                    if line.startswith('VERSION="'):
+                        ver = line[len('VERSION="'):-1]
+                        line = 'VERSION="%s-unofficial"' % ver
+                    data.append(line)
+            finally:
+                f.close()
+
+            f = file(os.path.join(dst, 'bin', 'homedir'), 'w')
+            try:
+                for line in data:
+                    f.write(line)
+                    f.write("\n")
+            finally:
+                f.close()
+
     def installFiles(self):
         "This copies the files into their proper location in .homedir and symlinks them into $HOME"
         msg("Installing files...")
