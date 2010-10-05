@@ -44,15 +44,18 @@ if sys.version_info < (2,5):
     print >> sys.stderr, """
 
 This program requires python 2.5.
-You're running python %s
+You're running python %(ver)s
 
 Please update your python.
 
 If you have a newer python on the system, then please run:
-  % /path/to/your/newer/python %s setup
+  /path/to/your/newer/python %(name)s setup --force
 
 It will update your copy of homedir and fix the path to python.
-""" % sys.version
+""" % {
+'ver': sys.version,
+'name': os.path.basename(__file__)
+}
     sys.exit(1)
 
 import optparse
@@ -392,7 +395,10 @@ def do_upgrade(options,*packages):
 
 def do_setup(options):
     from homedir.setup import Setup, getVersion
-    latest = getVersion()
+    if options.force:
+        latest = VERSION + 'nomatch'
+    else:
+        latest = getVersion()
     if latest == VERSION:
         print "You already have the latest version."
     else:
@@ -420,7 +426,7 @@ commands:
   remove PKG ...        Uninstall a package.
   upgrade PKG ...       Upgrade your installed packages (reinstall).
   list                  List all packages.
-  setup                 Install or upgrade homedir."""
+  setup [-f|--force]    Install or upgrade homedir (force even if up-to-date)."""
     parser = optparse.OptionParser(version=VERSION, usage=usage)
 
     parser.add_option('-q','--quiet',
@@ -432,6 +438,7 @@ commands:
 ##                       default=False,
 ##                       help="Show the actions that would have been taken, "
 ##                       "but don't actually do them")
+    parser.add_option('-f', '--force', action="store_true", help=optparse.SUPPRESS_HELP)
     parser.add_option('-d','--debug',
                       action="store_true", dest="debug",
                       default=False,
