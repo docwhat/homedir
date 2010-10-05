@@ -232,11 +232,12 @@ class Package(object):
 
     def fromSubdir(cls,directory):
         "Classmethod: Create a package from a subdirectory"
-        if os.path.exists(os.path.join(directory,CONTROLDIR,CONTROLFILENAME)) or \
-               os.path.exists(os.path.join(directory,OLD_CONTROLFILENAME)):
+        directory = Pathname(directory)
+        if (directory + CONTROLDIR + CONTROLFILENAME).exists() or \
+           (directory + OLD_CONTROLFILENAME).exists():
             return cls(directory)
-        updir = os.path.dirname(directory).rstrip(os.sep)
-        if updir:
+        updir = directory.dirname()
+        if updir != os.sep:
             return cls.fromSubdir(updir)
         else:
             return None
@@ -275,7 +276,7 @@ class Package(object):
         if srcpath not in self.src_dirs:
             return # We skip stuff not in directories
         if srcpath in self.src_mkdirs and not destpath.exists():
-            os.mkdir(destpath)
+            destpath.mkdir()
         if destpath.islink():
             linkpath = destpath.realpath()
             if self.isWithinLocation(linkpath):
@@ -288,7 +289,7 @@ class Package(object):
                     warn( "%s already points to %s" % (destpath,
                                                        srcpath) )
                     return
-                if os.path.isdir(srcpath):
+                if srcpath.isdir():
                     other = self.__class__.fromSubdir(linkpath)
                     if not other:
                         if self._resolveConflict(src=srcpath,
@@ -297,7 +298,7 @@ class Package(object):
                             self.mergeSubDir(src,dest,content)
                     else:
                         self.unsymlink(destpath)
-                        os.mkdir(destpath)
+                        destpath.mkdir()
                         self.merge(src=srcpath,dest=destpath)
                         other.merge(src=linkpath,dest=destpath)
                 else:
@@ -352,14 +353,15 @@ class Package(object):
     def unmerge(self,dest,only_dirs=None):
         "Unmerge the package from dest"
 
-        dest = os.path.realpath(dest)
+        assert(isinstance(dest,Pathname))
+        dest = dest.realpath()
 
         # We only check these dirs
         if only_dirs is None:
             only_dirs = [dest]
             if self.dirs:
                 for directory in self.dirs:
-                    only_dirs.append(os.path.join(dest,directory))
+                    only_dirs.append(dest + directory)
 
         elif dest not in only_dirs:
             # It's not prunable, don't worry about it.
@@ -369,23 +371,23 @@ class Package(object):
             return False # It's not empty
 
         is_empty = True
-        for content in os.listdir(dest):
-            destpath = os.path.join(dest,content)
-            if os.path.islink(destpath):
-                linktarget = os.path.realpath(destpath)
-                if linktarget.startswith(self.package_location):
+        for content in dest.listdir():
+            destpath = dest + content
+            if destpath.islink():
+                linktarget = destpath.realpath()
+                if self.isWithinLocation(linktarget):
                     self.unsymlink(destpath)
                 else:
                     is_empty = False
-            elif os.path.isdir(destpath):
-                is_destpath_empty = self.unmerge(destpath,only_dirs)
+            elif destpath.isdir():
+                is_destpath_empty = self.unmerge(destpath, only_dirs)
                 is_empty = is_destpath_empty and is_empty
             else:
                 is_empty = False
 
         if is_empty:
             try:
-                os.rmdir(dest)
+                dest.rmdir()
             except:
                 tb = traceback.format_exception( *sys.exc_info() )
                 print >> sys.stderr, "Unable to remove directory %s:\n %s" % (

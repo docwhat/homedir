@@ -385,8 +385,8 @@ def do_upgrade(options,*packages):
     # UnInstall Only
     actionLoop( lambda p:p.remove(HOME), 'removing', reverse_deps )
     def func(package):
-        package.install(HOME)
         package.remove(HOME)
+        package.install(HOME)
 
     actionLoop( func, 'upgrading', extra + packages )
 
@@ -413,11 +413,11 @@ def doParse():
     usage = """%prog [options] <command> arg(s)
 
 commands:
-  setup                 Install or upgrade homedir.
   install PKG ...       Install a package.
   remove PKG ...        Uninstall a package.
   upgrade PKG ...       Upgrade your installed packages (reinstall).
-  list                  List all packages."""
+  list                  List all packages.
+  setup                 Install or upgrade homedir."""
     parser = optparse.OptionParser(version=VERSION, usage=usage)
 
     parser.add_option('-q','--quiet',
@@ -432,7 +432,7 @@ commands:
     parser.add_option('-d','--debug',
                       action="store_true", dest="debug",
                       default=False,
-                      help="Turn on debugging info")
+                      help=optparse.SUPPRESS_HELP)
 
     (options,args) = parser.parse_args()
 
