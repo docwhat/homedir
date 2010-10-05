@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath
 ##   to know what was installed.  Note: it should work whether this info
 ##   is accurate or not
 
-VERSION="0.2"
+VERSION="2.0"
 COMMANDS = None # this is set below
 HOME = os.path.expanduser("~/") # easy way to do it
 HOMEDIR = os.path.expanduser("~/.homedir")
