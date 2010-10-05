@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath
 ##   to know what was installed.  Note: it should work whether this info
 ##   is accurate or not
 
-VERSION="2.0"
+VERSION="2.1"
 COMMANDS = None # this is set below
 HOME = os.path.expanduser("~/") # easy way to do it
 HOMEDIR = os.path.expanduser("~/.homedir")
@@ -385,15 +385,18 @@ def do_upgrade(options,*packages):
     # UnInstall Only
     actionLoop( lambda p:p.remove(HOME), 'removing', reverse_deps )
     def func(package):
-        package.install(HOME)
         package.remove(HOME)
+        package.install(HOME)
 
     actionLoop( func, 'upgrading', extra + packages )
 
 def do_setup(options):
-    from homedir.setup import Setup
-    Setup(via_web=True)
-
+    from homedir.setup import Setup, getVersion
+    latest = getVersion()
+    if latest == VERSION:
+        print "You already have the latest version."
+    else:
+        Setup(via_web=True)
 
 COMMANDS = {'list': do_list,
             'install': do_install,
@@ -413,11 +416,11 @@ def doParse():
     usage = """%prog [options] <command> arg(s)
 
 commands:
-  setup                 Install or upgrade homedir.
   install PKG ...       Install a package.
   remove PKG ...        Uninstall a package.
   upgrade PKG ...       Upgrade your installed packages (reinstall).
-  list                  List all packages."""
+  list                  List all packages.
+  setup                 Install or upgrade homedir."""
     parser = optparse.OptionParser(version=VERSION, usage=usage)
 
     parser.add_option('-q','--quiet',
@@ -432,7 +435,7 @@ commands:
     parser.add_option('-d','--debug',
                       action="store_true", dest="debug",
                       default=False,
-                      help="Turn on debugging info")
+                      help=optparse.SUPPRESS_HELP)
 
     (options,args) = parser.parse_args()
 

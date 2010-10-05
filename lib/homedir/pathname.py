@@ -81,6 +81,9 @@ class Pathname:
     def mkdir(self):
         return os.mkdir(self._path)
 
+    def rmdir(self):
+        return os.rmdir(self._path)
+
     def rm_rf(self, ignore_errors=False):
         return shutil.rmtree(self._path, ignore_errors)
 
