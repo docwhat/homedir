@@ -32,6 +32,23 @@ DIRVERSION=2
 class UnknownDirVersion(StandardError):
     pass
 
+def getVersion():
+    "Returns the latest version number from github"
+    httplib.HTTPConnection.debuglevel = 1
+    request = urllib2.Request("http://github.com/docwhat/homedir/raw/master/bin/homedir")
+    opener = urllib2.build_opener()
+    f = opener.open(request)
+    version = None
+    try:
+        for line in f.readlines():
+            if line.startswith('VERSION="'):
+                version = line.rstrip()[len('VERSION="'):-1]
+                break
+    finally:
+        f.close()
+    return version
+
+
 def getch():
     "Returns a single character"
     if getch.platform is None:
@@ -271,8 +288,11 @@ class Setup:
             request = urllib2.Request("http://github.com/docwhat/homedir/tarball/master")
             opener = urllib2.build_opener()
             f = opener.open(request)
-            z = MyTarFile.open(fileobj=f, mode='r|*')
-            z.extractall(dst)
+            try:
+                z = MyTarFile.open(fileobj=f, mode='r|*')
+                z.extractall(dst)
+            finally:
+                f.close()
         else:
             msg("Copying homedir from files...")
             src = os.path.abspath(__file__)

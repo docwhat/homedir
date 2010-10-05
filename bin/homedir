@@ -391,9 +391,12 @@ def do_upgrade(options,*packages):
     actionLoop( func, 'upgrading', extra + packages )
 
 def do_setup(options):
-    from homedir.setup import Setup
-    Setup(via_web=True)
-
+    from homedir.setup import Setup, getVersion
+    latest = getVersion()
+    if latest == VERSION:
+        print "You already have the latest version."
+    else:
+        Setup(via_web=True)
 
 COMMANDS = {'list': do_list,
             'install': do_install,
