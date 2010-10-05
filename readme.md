@@ -81,12 +81,9 @@ get the latest version from GitHub.
 
 ## Plans/Todo
 
-* Move warn/error, etc. into separate module.
 * Finish moving out the package and dependency checking stuff into a Catalog class.
-* Look more carefully at the pre/post code.
 * Add a true version number to homedir.  I'll start doing work in a different branch and only push to master when it's a new official branch.
-* I'll probably then tweak setup.py not to refetch if the version on disk is the same on github.
+  * I'll probably then tweak setup.py not to refetch if the version on disk is the same on github.
 * Fix cache-tool package in examples.
-
 * Add `homedir-pkg <pkg-name> <file-to-add>...` command to make building a package from existing files easier.
 
