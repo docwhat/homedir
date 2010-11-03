@@ -21,9 +21,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
+## TODO: unmergeSubDir -- turn directories back to symlinks or delete.
+
 import os, sys, traceback
-from homedir.handle import warn
-from homedir.pathname import Pathname
+from handle import warn
+from pathname import Pathname
 
 __all__ = ('NotPackageError', 'ConflictError', 'Package',
            'CONTROLDIR', 'CONTROLFILENAME', 'OLD_CONTROLFILENAME', 'PKG_VERSION' )
@@ -58,7 +60,6 @@ class Package(object):
     package = None
     priority = None
     maintainer = None
-    depends = None
     standards_version = None
     description = None
     dirs = None
@@ -67,7 +68,6 @@ class Package(object):
     package_location = None
     src_dirs = None
     src_mkdirs = None
-    reverse_depends = None
 
     conflict_resolver = None
 
@@ -75,8 +75,16 @@ class Package(object):
                    'standards-version','description','dirs','mkdirs',
                    'ubuntu-packages')
 
-    def __init__(self, directory):
-        self.package_location = directory = Pathname(directory)
+    @apply
+    def name():
+        def fget(self):
+            return self.package
+        return property(**locals())
+
+    def __init__(self, directory, catalog):
+        self.catalog = catalog
+        self.package_location = directory = Pathname(directory).realpath()
+        self._depends = set()
 
         # Find the control directory, supporting the old name.
         control = directory + CONTROLDIR + CONTROLFILENAME
@@ -85,6 +93,7 @@ class Package(object):
 
         if not control.isfile():
             raise NotPackageError("No control file")
+
         self._parse(control)
 
     def __repr__(self):
@@ -99,6 +108,12 @@ class Package(object):
         else:
             raise TypeError( "%s cannot be compared to %s" % (
                 self.__class__, type(other)))
+
+    @apply
+    def depends():
+        def fget(self):
+            return self.catalog.find(*self._depends)
+        return property(**locals())
 
     def _parse(self,control):
         curr = None
@@ -170,8 +185,7 @@ class Package(object):
                 sys.exit(1)
             setattr(self,attr, [])
         elif attr == "depends":
-            d = self.depends = []
-            d.extend( [x.strip() for x in val.split(',') if x] )
+            self._depends = set([x.strip() for x in val.split(',') if x])
         elif attr == 'standards-version':
             val = int(val)
             if val != PKG_VERSION:
@@ -187,8 +201,7 @@ class Package(object):
         if attr in ('mkdirs','dirs'):
             getattr(self,attr).append(val.strip())
         elif attr == "depends":
-            d = self.depends
-            d.extend( [x.strip() for x in val.split(',')] )
+            self._depends.update(set([x.strip() for x in val.split(',')]))
         elif attr == 'standards-version':
             raise AssertionError("Can't append %s" % attr)
         elif attr in self._attributes:
@@ -197,10 +210,36 @@ class Package(object):
             raise AssertionError("Invalid Attribute %s: %s:%d" % (attr,file,linenum))
 
     def _resolveConflict(self,src,dst):
+        raise "NARF"
         if self.conflict_resolver:
             return self.conflict_resolver(src,dst)
         else:
             raise ConflictError(src=src, dst=dst)
+
+    def normalize(self, catalog):
+        self.depends = catalog.find(*self.depends)
+
+    def prettyPrint(self):
+        "Pretty Print the package"
+        def strify(o):
+            if o is None:
+                return 'none'
+            if isinstance(o, self.__class__):
+                return o.package
+            if isinstance(o, list):
+                return ', '.join([strify(x) for x in o])
+            return unicode(o)
+        print self.package
+        print "  priority:          %s"  % self.priority
+        print "  maintainer:        %s"  % self.maintainer
+        print "  standards-version: %s"  % self.standards_version
+        print "  description:       %s"  % self.description.split('\n')[0]
+        print "  dirs:              %s"  % strify(self.dirs)
+        print "  mkdirs:            %s"  % strify(self.mkdirs)
+        print "  package-location:  %s"  % strify(self.package_location)
+        #print "  src-dirs:          %s"  % strify(self.src_dirs)
+        #print "  src-mkdirs:        %s"  % strify(self.src_mkdirs)
+        print "  depends:           %s"  % strify(self.depends)
 
     def unsymlink(self,file):
         "Helper method to remove a symlink and only symlinks"

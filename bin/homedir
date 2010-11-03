@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
+COPYRIGHT = """
 This is a package management system designed to work around packages
-for the homedirectory.  The code is based upon ideas from GNU Stow.
+for your home directory.  The code is based upon ideas from GNU Stow.
 
-HomeDir - manage the installation of packages for a user's homedir
+HomeDir - manage your home directory.
 Copyright (C) 2004-2010 by Christian Höltje
 
 This program is free software; you can redistribute it and/or modify
@@ -25,12 +25,7 @@ import os, sys, traceback
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib'))
 
-## TODO
-## * unmergeSubDir
-## * detect conflicts from other packages (this might be done...)
-## * copy the homedir.control into ~/.homedir/installed to allow the user
-##   to know what was installed.  Note: it should work whether this info
-##   is accurate or not
+## TODO - Installation tracker so that user can just 'update' without specifying packages.
 
 VERSION="2.2"
 COMMANDS = None # this is set below
@@ -63,77 +58,7 @@ from homedir.package  import *
 from homedir.catalog  import *
 from homedir.pathname import Pathname
 from homedir.setup    import getch
-from homedir.handle   import warn, warn_mode
-
-def pluralize(singular,plural,count):
-    "Returns the correct form of a word, based on count"
-    if count == 1:
-        return singular
-    elif count > 1 or count == 0:
-        return plural
-    else:
-        raise AssertionError("Unable to pluralize")
-
-def fixDir(dir):
-    "expands variables, deals with ~/, fixes case, and removes double slashes"
-    return os.path.expanduser(
-        os.path.expandvars(
-        os.path.normpath(
-        os.path.normcase(
-        dir
-        ))))
-
-def buildPackageDepends(package,depends=None,ignore=None):
-    """ARGS:
-    package -- package to find dependencies for
-    depends -- packages that package depends on (needed for recursion)
-    ignore  -- packages to ignore (they are being taken care of elsewhere)
-
-    Returns depends"""
-    if depends is None:
-        depends = []
-    if package.depends:
-        for p in package.depends:
-            if p not in depends and \
-               (not ignore or p not in ignore):
-                depends.append(p)
-            buildPackageDepends(p,depends,ignore)
-    return depends
-
-def buildDeps(options,*packages):
-    "Build up all the dependencies"
-
-    scanDepends(options)
-
-    allpkgs = []
-    for package in packages:
-        buildPackageDepends(package,allpkgs,ignore=packages)
-    return allpkgs
-
-def scanReverseDepends(options):
-    for depender in options.packages.values():
-        if depender.depends is None:
-            dependencies = []
-        else:
-            dependencies = depender.depends
-
-        for dependee in dependencies:
-            dependee = lookUpOne(options,dependee)
-            if dependee.reverse_depends is None:
-                dependee.reverse_depends = []
-            if depender not in dependee.reverse_depends:
-                dependee.reverse_depends.append( depender )
-
-def buildPackageReverseDepends(package,reverses=None,ignore=None):
-    if reverses is None:
-        reverses = []
-    if package.reverse_depends:
-        for p in package.reverse_depends:
-            if p not in reverses and \
-               (not ignore or p not in ignore):
-                reverses.append(p)
-            buildPackageReverseDepends(p,reverses,ignore)
-    return reverses
+from homedir.handle   import *
 
 class resolveConflict:
     counter = 0
@@ -253,48 +178,54 @@ def actionLoop( func, action, packages ):
             print >> sys.stderr, "There was an unresolved conflict while %s '%s' on file:" % (action,package.package)
             print >> sys.stderr, "    %s" % err
 
-def buildRDeps(options,*packages):
-    "Build up all the reverse dependencies"
-
-    scanReverseDepends(options)
-
-    allpkgs = []
-    for package in packages:
-        buildPackageReverseDepends(package,allpkgs,ignore=packages)
-    return allpkgs
-
-def do_list(options):
+def do_list(options, catalog):
     "Do the list command"
-    items = options.packages.items()
-    items.sort( lambda a,b: cmp(a[0],b[0]) )
-    max_name = reduce(lambda prev,next: max(prev,len(next[0])), items, 0)
-    template = "%%-%ds  %%s" % max_name
-    for key, pkg in items:
+
+    pkgs = catalog.all()
+    pkgs.sort()
+
+    # Get the maximum name size for better formatting.
+    max_name = reduce(lambda prev,next: max(prev,len(next)), [p.name for p in pkgs], 0)
+
+    template = " %%-%ds  %%s" % max_name
+
+    print template % ("name",
+                      "description")
+    print template % ("-" * max_name,
+                      "-" * (78 - max_name - 2 ))
+
+    for pkg in pkgs:
         print template % (pkg.package,
                           pkg.short_description)
-    print " %d packages" % len(options.packages.keys())
 
-def do_install(options,*packages):
+    print "%d packages" % len(pkgs)
+
+def do_install(options, catalog, *packages):
     "Do the install command"
     # lookup the packages
-    packages = lookUp(options,*packages)
+    packages = catalog.find(*packages)
+    sorted_packages = list(packages)
+    sorted_packages.sort()
+
     print
     print "You asked me to install %s:" % pluralize('this package',
                                                     'these packages',
                                                     len(packages))
-    for p in packages:
+    for p in sorted_packages:
         print "    %s \t%s" % (p.package,p.short_description)
 
+
     # Do dependencies
-    extra = buildDeps(options,*packages)
-    if extra:
+    deps = catalog.findDependencies(*packages).difference(packages)
+    sorted_deps= list(deps)
+    sorted_deps.sort()
+
+    if deps:
         print
         print "I need to install the following extra %s to meet dependencies:"%\
-              pluralize('package','packages',len(extra))
-        for p in extra:
+              pluralize('package','packages',len(deps))
+        for p in sorted_deps:
             print "    %s \t%s" % (p.package,p.short_description)
-        if not extra:
-            print "    None"
 
         print "Is that okay? [Y/n] ",
         response = sys.stdin.readline().strip()
@@ -302,33 +233,41 @@ def do_install(options,*packages):
             print "Okay then, quitting..."
             sys.exit(0)
     print "Installing Packages..."
-    actionLoop( lambda p:p.install(HOME), 'installing', extra+packages )
+    actionLoop( lambda p:p.install(HOME), 'installing', packages.union(deps))
 
-def do_remove(options,*packages):
+def do_remove(options, catalog, *packages):
     "Do the uninstall command"
     # lookup the packages
 
-    packages = lookUp(options,*packages)
+    packages = catalog.find(*packages)
+    sorted_packages = list(packages)
+    sorted_packages.sort()
+
     print
     print "You asked me to remove %s:" % pluralize('this package',
                                                    'these packages',
                                                    len(packages))
-    for p in packages:
+    for p in sorted_packages:
         print "    %s \t%s" % (p.package,p.short_description)
     if not packages:
         print "    None"
 
 
-    extra = buildRDeps(options,*packages)
+    # Do dependencies
+    deps = catalog.findReverseDependencies(*packages).difference(packages)
+    sorted_deps= list(deps)
+    sorted_deps.sort()
 
-    if extra:
+    if deps:
         print
         print "The following %s depend on the above %s and will be" % (
-              pluralize('package','packages',len(extra)),
+              pluralize('package','packages',len(deps)),
               pluralize('package','packages',len(packages)))
+
         print "removed if installed:"
-        for p in extra:
-            print "    %s \t%s" % (p.package,p.short_description)
+        for p in sorted_deps:
+            print "    %s \t%s" % (p.package, p.short_description)
+
         print "Is that okay? [y/N] ",
         response = sys.stdin.readline().strip()
         if not response or response[0].upper() == 'N':
@@ -337,45 +276,53 @@ def do_remove(options,*packages):
 
     print "Removing Packages..."
 
-    actionLoop( lambda p:p.remove(HOME), 'removing', extra+packages )
+    actionLoop( lambda p:p.remove(HOME), 'removing', deps.union(packages) )
 
-def do_upgrade(options,*packages):
-    packages = lookUp(options,*packages)
+def do_upgrade(options, catalog, *packages):
+
+    packages = catalog.find(*packages)
+    sorted_packages = list(packages)
+    sorted_packages.sort()
+
     print
     print "You asked me to upgrade %s:" % pluralize('this package',
                                                     'these packages',
                                                     len(packages))
 
-    for p in packages:
+    for p in sorted_packages:
         print "    %s \t%s" % (p.package,p.short_description)
     if not packages:
         print "    None"
 
-    extra = buildDeps(options,*packages)
-    reverse_deps = []
-    for package in buildRDeps(options,*packages):
-        # don't duplicate packages, please!
-        if package not in extra:
-            reverse_deps.append( package )
+    # Do dependencies
+    deps = catalog.findDependencies(*packages).difference(packages)
+    sorted_deps= list(deps)
+    sorted_deps.sort()
 
-    if extra:
+    # don't duplicate packages, please!
+    rdeps = catalog.findReverseDependencies(*packages).difference(packages).difference(deps)
+    sorted_rdeps= list(rdeps)
+    sorted_rdeps.sort()
+
+
+    if deps:
         print
         print "The following %s have dependencies that interact with " %\
-              pluralize('package','packages',len(extra))
+              pluralize('package','packages',len(deps))
         print "the above %s and will be upgraded as well:" % pluralize(
-            'package','packages',len(packages))
-        for p in extra:
+            'package','packages',len(deps))
+        for p in sorted_deps:
             print "    %s \t%s" % (p.package,p.short_description)
 
-    if reverse_deps:
+    if rdeps:
         print
         print "You might need to re-install %s" % \
-              pluralize('this package','these packages',len(reverse_deps)),
+              pluralize('this package','these packages',len(rdeps)),
         print "manually afterwards:"
-        for p in reverse_deps:
+        for p in sorted_rdeps:
             print "    %s \t%s" % (p.package,p.short_description)
 
-    if extra or reverse_deps:
+    if deps or rdeps:
         print
         print "Is that okay? [y/N] ",
         response = sys.stdin.readline().strip()
@@ -386,14 +333,14 @@ def do_upgrade(options,*packages):
     print "Updating Packages..."
 
     # UnInstall Only
-    actionLoop( lambda p:p.remove(HOME), 'removing', reverse_deps )
+    actionLoop( lambda p:p.remove(HOME), 'removing', rdeps )
     def func(package):
         package.remove(HOME)
         package.install(HOME)
 
-    actionLoop( func, 'upgrading', extra + packages )
+    actionLoop( func, 'upgrading', packages.union(deps) )
 
-def do_setup(options):
+def do_setup(options, catalog):
     from homedir.setup import Setup, getVersion
     if options.force:
         latest = VERSION + 'nomatch'
@@ -443,10 +390,15 @@ commands:
                       action="store_true", dest="debug",
                       default=False,
                       help=optparse.SUPPRESS_HELP)
+    parser.add_option('--copyright', action="store_true", help="Show the copyright and exit.")
 
     (options,args) = parser.parse_args()
 
     warn_mode(options.debug)
+
+    if options.copyright:
+        print COPYRIGHT
+        sys.exit(0)
 
     if not args:
         parser.print_help()
@@ -461,9 +413,9 @@ if "__main__" == __name__:
         options, args = doParse()
         command = args[0]
         rest_args = args[1:]
-        scanPackages(options)
+        catalog = Catalog(debug=options.debug)
 
-        COMMANDS[command](options,*rest_args)
+        COMMANDS[command](options,catalog,*rest_args)
     except KeyboardInterrupt:
         print >> sys.stderr, "\nUser Aborted",
         sys.exit(1)

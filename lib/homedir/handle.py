@@ -21,7 +21,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
-__all__ = ( 'warn_mode', 'warn' )
+__all__ = ( 'warn_mode', 'warn', 'pluralize' )
 
 # Warn mode helper
 WARN = False
@@ -34,4 +34,13 @@ def warn(*msg):
     "Either prints a warning message or is a nop, depending on options"
     if WARN:
         print "WARN: %s" % " ".join(map(str,msg))
+
+def pluralize(singular,plural,count):
+    "Returns the correct form of a word, based on count"
+    if count == 1:
+        return singular
+    elif count > 1 or count == 0:
+        return plural
+    else:
+        raise AssertionError("Unable to pluralize")
 

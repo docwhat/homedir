@@ -22,69 +22,183 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
 import os, sys
-from homedir.package import *
+from package import *
 
 class MissingPackageError(StandardError): pass
 
-def scanPackages(options):
-    """Scan all the package directories, building up a list of packages
-    """
-    top = os.path.expanduser("~/.homedir/packages")
+class Catalog:
+    def __init__(self, debug=False):
+        top = os.path.expanduser("~/.homedir/packages")
+        self.packages = packages = {}
+        self.debug    = debug
 
-    packages = options.packages = {}
+        ## Gather the packages.
+        def walker(arg, dirname, fnames):
+            try:
+                package = Package(dirname, self)
+                packages[package.package] = package
+                while len(fnames) > 0:
+                    del fnames[0]
+            except NotPackageError,err:
+                for i in range(len(fnames)-1, 0-1, -1):
+                    fname = fnames[i]
+                    if fname.startswith('.'):
+                        del fnames[i]
 
-    def walker(arg, dirname, fnames):
-        try:
-            package = Package(dirname)
-            packages[package.package] = package
-            while len(fnames) > 0:
-                del fnames[0]
-        except NotPackageError,err:
-            for i in range(len(fnames)-1, 0-1, -1):
-                fname = fnames[i]
-                if fname.startswith('.'):
-                    del fnames[i]
+        os.path.walk(top, walker, None)
+        self.packages = packages
 
-    os.path.walk(top, walker, None)
+        ## ## Figure out dependencies.
+        ## for package in packages.values():
+        ##     if not package.depends:
+        ##         continue
+        ##     try:
+        ##         package.depends = [self.findOne(x) for x in package.depends]
+        ##     except MissingPackageError, err:
+        ##         if self.debug:
+        ##             raise AssertionError( "Bad Packages: %s" % ",".join(map(str,bad)))
+        ##         print >> sys.stderr, "In the package '%s': %s" % (package.package, err)
+        ##         sys.exit(1)
 
-    return packages
+        ## ## Figure out reverse-dependencies.
+        ## for depender in self.packages.values():
+        ##     if depender.depends is None:
+        ##         dependencies = []
+        ##     else:
+        ##         dependencies = depender.depends
 
-def lookUp(options,*names):
-    """Look up one or more packages; one per string in names"""
-    packages = []
-    bad = []
-    for name in names:
-        if isinstance(name,Package) and \
-           options.packages.has_key(name.package):
-            if name not in packages:
-                packages.append(name)
-        elif options.packages.has_key(name):
-            p = options.packages[name]
-            if p not in packages:
-                packages.append(p)
+        ##     for dependee in dependencies:
+        ##         dependee = self.findOne(dependee)
+
+        ##         if depender not in dependee.reverse_depends:
+        ##             dependee.reverse_depends.append( depender )
+
+## def buildPackageDepends(package,depends=None,ignore=None):
+##     """ARGS:
+##     package -- package to find dependencies for
+##     depends -- packages that package depends on (needed for recursion)
+##     ignore  -- packages to ignore (they are being taken care of elsewhere)
+
+##     Returns depends"""
+##     if depends is None:
+##         depends = []
+##     if package.depends:
+##         for p in package.depends:
+##             if p not in depends and \
+##                (not ignore or p not in ignore):
+##                 depends.append(p)
+##             buildPackageDepends(p,depends,ignore)
+##     return depends
+
+## def buildDeps(options,*packages):
+##     "Build up all the dependencies"
+
+##     scanDepends(options)
+
+##     allpkgs = []
+##     for package in packages:
+##         buildPackageDepends(package,allpkgs,ignore=packages)
+##     return allpkgs
+
+## def buildPackageReverseDepends(package,reverses=None,ignore=None):
+##     if reverses is None:
+##         reverses = []
+##     if package.reverse_depends:
+##         for p in package.reverse_depends:
+##             if p not in reverses and \
+##                (not ignore or p not in ignore):
+##                 reverses.append(p)
+##             buildPackageReverseDepends(p,reverses,ignore)
+##     return reverses
+
+## def buildRDeps(options,*packages):
+##     "Build up all the reverse dependencies"
+
+##     scanReverseDepends(options)
+
+##     allpkgs = []
+##     for package in packages:
+##         buildPackageReverseDepends(package,allpkgs,ignore=packages)
+##     return allpkgs
+
+    def findOne(self, name):
+        "Returns one package or None"
+        res = self.find(name)
+        if res:
+            return tuple(res)[0]
         else:
-            bad.append(name)
-    if bad:
-        raise MissingPackageError("Unknown packages: %s" % (",".join(map(str,bad))))
-    return packages
+            return None
 
-def lookUpOne(options,name):
-    "look up just one name"
-    results = lookUp(options,name)
-    if results:
-        return results[0]
-    else:
-        return None
+    def find(self, *names):
+        """Finds a package based on name.
 
-def scanDepends(options):
-    for package in options.packages.values():
-        if package.depends is None:
-            continue
-        try:
-            package.depends = [lookUpOne(options,x) for x in package.depends]
-        except MissingPackageError, err:
-            if options.debug:
-                raise AssertionError( "Bad Packages: %s" % ",".join(map(str,bad)))
-            print >> sys.stderr, "In the package '%s': %s" % (package.package, err)
-            sys.exit(1)
+        Returns a list of packages.
+        """
+        packages = set()
+        bad = set()
 
+        for name in names:
+            if isinstance(name,Package) and \
+               self.packages.has_key(name.package):
+                packages.add(name)
+            elif self.packages.has_key(name):
+                packages.add(self.packages[name])
+            else:
+                bad.add(name)
+        if bad:
+            raise MissingPackageError("Unknown packages: %s" % (",".join(map(str,bad))))
+        return packages
+
+
+    def all(self):
+        "Returns all packages"
+        return self.packages.values()
+
+    def findDependencies(self, *packages, **kwargs):
+        "Returns all dependencies for the list of packages."
+
+        found = kwargs.get('found', set())
+        packages = set([self.packages.get(x,x) for x in packages])
+
+        for package in packages:
+            found.add(package)
+            deps = package.depends
+            if deps:
+                for dep in deps:
+                    found.add(dep)
+                    found.update(self.findDependencies(dep, found=found))
+
+        return found
+
+    def findReverseDependencies(self, *packages, **kwargs):
+        "Returns all reverse dependencies for the list of packages."
+
+        found = kwargs.get('found', set())
+        packages = set([self.packages.get(x,x) for x in packages])
+
+        for package in self.packages.values():
+            print "NARF %r" % package.depends
+            if package in package.depends:
+                found.add(package)
+
+        for package in packages:
+            found.add(package)
+            deps = package.depends
+            if deps:
+                for dep in deps:
+                    found.add(dep)
+                    found.update(self.findDependencies(dep, found=found))
+
+        return found
+
+if __name__ == "__main__":
+    cat = Catalog()
+    pkgs = cat.packages.values()
+    pkgs.sort()
+    for pkg in pkgs:
+        print "------------------------"
+        #pkg.prettyPrint()
+        print pkg.name
+        print cat.findDependencies(pkg)
+
+# EOF

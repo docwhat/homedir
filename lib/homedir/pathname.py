@@ -54,6 +54,16 @@ class Pathname:
     def realpath(self):
         return Pathname(os.path.realpath(self._path))
 
+    def normalize(self):
+        "expands variables, deals with ~/, fixes case, and removes double slashes"
+        return Pathname(
+            os.path.expanduser(
+                os.path.expandvars(
+                    os.path.normpath(
+                        os.path.normcase(
+                            self._path
+                            )))))
+
     def exists(self):
         return os.path.exists(self._path)
 
