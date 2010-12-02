@@ -1,0 +1,50 @@
+#!/usr/bin/python -utWall
+
+import os, sys
+from subprocess import *
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib'))
+
+from homedir.pathname import *
+
+homedir = Pathname(__file__).dirname() + 'bin' + 'homedir'
+
+data = []
+major, minor, old_minor = None, None, None
+f = homedir.open('r')
+try:
+    for line in f.readlines():
+        line = line.rstrip()
+        if line.startswith('VERSION="'):
+            ver = line[len('VERSION="'):-1]
+            major, minor = [int(x) for x in ver.split('.')]
+            old_minor = minor
+            minor = minor + 1
+            line = 'VERSION="%d.%d"' % (major, minor)
+        data.append(line)
+finally:
+    f.close()
+
+if major is None or minor is None or old_minor is None:
+    raise StandardError("Failed to parse version.")
+
+f = homedir.open('w')
+try:
+    for line in data:
+        f.write(line)
+        f.write("\n")
+finally:
+    f.close()
+
+print "Committing..."
+output = Popen(["git", "commit", '-m', 'Bumped version to %d.%d' % (major, minor), unicode(homedir)], stdout=PIPE).communicate()[0]
+print output
+
+print "Tagging..."
+tagname = "version-%d.%d" % (major, minor)
+output = Popen(["git", "tag", '-m', 'Bumped version to %d.%d' % (major, minor), tagname], stdout=PIPE).communicate()[0]
+print output
+
+print "Done!"
+
+# EOF
