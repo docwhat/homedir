@@ -326,7 +326,7 @@ class Setup:
         "This copies the files into their proper location in .homedir and symlinks them into $HOME"
         msg("Installing files...")
         pj = os.path.join
-        for e in ('bin', 'lib'):
+        for e in ('bin', 'lib', 'cache'):
             src = pj(self.dir, 'tmp', e)
             dst = pj(self.dir, e)
             shutil.rmtree(dst, ignore_errors=True)
