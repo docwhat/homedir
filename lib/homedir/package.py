@@ -210,7 +210,6 @@ class Package(object):
             raise AssertionError("Invalid Attribute %s: %s:%d" % (attr,file,linenum))
 
     def _resolveConflict(self,src,dst):
-        raise "NARF"
         if self.conflict_resolver:
             return self.conflict_resolver(src,dst)
         else:

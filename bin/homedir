@@ -101,13 +101,13 @@ class resolveConflict:
 
         link_display = None
         if dst.islink():
-            link_display = "The symlink points to '%s'" % dst.readlink()
+            link_display = "It points to '%s'" % dst.readlink()
             if dst.exists():
-                link_display += " (a %s)." % ftype
                 ftype = "symlink"
             else:
                 ftype = "broken symlink"
                 link_display += " which does not exist"
+            link_display += '.'
 
         answer = ''
         count = 0
