@@ -177,7 +177,6 @@ class Catalog:
         packages = set([self.packages.get(x,x) for x in packages])
 
         for package in self.packages.values():
-            print "NARF %r" % package.depends
             if package in package.depends:
                 found.add(package)
 
