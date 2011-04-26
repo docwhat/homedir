@@ -35,7 +35,7 @@ class UnknownDirVersion(StandardError):
 def getVersion():
     "Returns the latest version number from github"
     httplib.HTTPConnection.debuglevel = 1
-    request = urllib2.Request("http://github.com/docwhat/homedir/raw/master/bin/homedir")
+    request = urllib2.Request("https://github.com/docwhat/homedir/raw/master/bin/homedir")
     opener = urllib2.build_opener()
     f = opener.open(request)
     version = None
@@ -285,7 +285,7 @@ class Setup:
         if self.via_web:
             msg("Fetching latest version of homedir...")
             httplib.HTTPConnection.debuglevel = 1
-            request = urllib2.Request("http://github.com/docwhat/homedir/tarball/master")
+            request = urllib2.Request("https://github.com/docwhat/homedir/tarball/master")
             opener = urllib2.build_opener()
             f = opener.open(request)
             try:

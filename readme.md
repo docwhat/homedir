@@ -9,7 +9,7 @@ Then you want HomeDir!
 It is, in essence, a package manager for your home directory.
 
 It stores *packages* in your `~/.homedir/packages` directory.  These packages can be pulled from my 
-[examples](http://github.com/docwhat/homedir-examples) or you can set up your own!
+[examples](https://github.com/docwhat/homedir-examples) or you can set up your own!
 
 This allows you to:
 
@@ -24,9 +24,9 @@ You must have python 2.5 or newer.
 
 If you've never used HomeDir, then just run this from the command line:
 
-    curl -o- http://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py | python
+    curl -o- https://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py | python
 
-If you don't have curl, then just download (usually right-click and then select "save as...") the file [setup.py](http://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py) and run it with your copy of python.
+If you don't have curl, then just download (usually right-click and then select "save as...") the file [setup.py](https://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py) and run it with your copy of python.
 
 If you already have `~/bin` in your path, then homedir will "Just Work™".
 
