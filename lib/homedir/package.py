@@ -443,13 +443,13 @@ class Package(object):
         dest = Pathname(dest)
         preflight = _src + CONTROLDIR + 'pre-install'
         if preflight.access(os.X_OK):
-            os.system(preflight)
+            os.system(str(preflight))
 
         self.merge(dest,src)
 
         postflight = _src + CONTROLDIR + 'post-install'
         if postflight.access(os.X_OK):
-            os.system(postflight)
+            os.system(str(postflight))
 
     def remove(self,dest,src=None):
         "Remove the package"
@@ -462,12 +462,12 @@ class Package(object):
 
         preflight = _src + CONTROLDIR + 'pre-remove'
         if preflight.access(os.X_OK):
-            os.system(preflight)
+            os.system(str(preflight))
 
         self.unmerge(dest,src)
 
         postflight = _src + CONTROLDIR + 'post-remove'
         if postflight.access(os.X_OK):
-            os.system(postflight)
+            os.system(str(postflight))
 
 # vim: set sw=4 ts=4 expandtab
