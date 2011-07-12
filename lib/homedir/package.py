@@ -268,15 +268,15 @@ class Package(object):
         return locals()
     short_description = property(**short_description())
 
-    def fromSubdir(cls,directory):
+    def fromSubdir(cls, directory, catalog):
         "Classmethod: Create a package from a subdirectory"
         directory = Pathname(directory)
         if (directory + CONTROLDIR + CONTROLFILENAME).exists() or \
            (directory + OLD_CONTROLFILENAME).exists():
-            return cls(directory)
+            return cls(directory, catalog)
         updir = directory.dirname()
         if updir != os.sep:
-            return cls.fromSubdir(updir)
+            return cls.fromSubdir(updir, catalog)
         else:
             return None
     fromSubdir = classmethod(fromSubdir)
@@ -328,7 +328,7 @@ class Package(object):
                                                        srcpath) )
                     return
                 if srcpath.isdir():
-                    other = self.__class__.fromSubdir(linkpath)
+                    other = self.__class__.fromSubdir(linkpath, self.catalog)
                     if not other:
                         if self._resolveConflict(src=srcpath,
                                                  dst=destpath):
