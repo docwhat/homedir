@@ -111,6 +111,9 @@ class Pathname:
         head, tail = os.path.split(self._path)
         return (Pathname(head), Pathname(tail))
 
+    def rename(self, dest):
+        return os.rename(self._path, unicode(dest))
+
     def relative_path_from(self, base):
         """Returns the a path to self, relative to base.
 
