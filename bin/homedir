@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python -utWall
 # -*- coding: utf-8 -*-
 COPYRIGHT = """
 This is a package management system designed to work around packages
@@ -137,6 +137,7 @@ class resolveConflict:
             if answer == '!':
                 raise StandardError('You triggered a debugging feature!')
 
+        print
         if answer == 'q':
             print "Okay then, quitting..."
             sys.exit(0)
@@ -152,12 +153,12 @@ class resolveConflict:
             if dstmove.exists():
                 raise ConflictError("A file has prevented backup %s"%dstmove,
                                     src=src, dst=dst)
-            os.rename(dst,dstmove)
+            dst.rename(dstmove)
             return True
         elif answer == 'o':
             if dstmove.exists():
                 dstmove.unlink()
-            os.rename(dst,dstmove)
+            dst.rename(dstmove)
             return True
         else:
             raise AssertionError("The while loop should prevent this from ever happening.")
