@@ -27,99 +27,33 @@ from package import *
 class MissingPackageError(StandardError): pass
 
 class Catalog:
-    def __init__(self, debug=False):
-        top = os.path.expanduser("~/.homedir/packages")
+    ##
+    # Arguments:
+    # * debug -- Turn on debugging in the catalog code.
+    # * mock_packages -- A hash of mock packages for testing purposes.
+    def __init__(self, debug=False, mock_packages=None):
         self.packages = packages = {}
         self.debug    = debug
+        if mock_packages is not None:
+            self.packages = mock_packages
+        else:
+            top = os.path.expanduser("~/.homedir/packages")
 
-        ## Gather the packages.
-        def walker(arg, dirname, fnames):
-            try:
-                package = Package(dirname, self)
-                packages[package.package] = package
-                while len(fnames) > 0:
-                    del fnames[0]
-            except NotPackageError,err:
-                for i in range(len(fnames)-1, 0-1, -1):
-                    fname = fnames[i]
-                    if fname.startswith('.'):
-                        del fnames[i]
+            ## Gather the packages.
+            def walker(arg, dirname, fnames):
+                try:
+                    package = Package(dirname, self)
+                    packages[package.package] = package
+                    while len(fnames) > 0:
+                        del fnames[0]
+                except NotPackageError,err:
+                    for i in range(len(fnames)-1, 0-1, -1):
+                        fname = fnames[i]
+                        if fname.startswith('.'):
+                            del fnames[i]
 
-        os.path.walk(top, walker, None)
-        self.packages = packages
-
-        ## ## Figure out dependencies.
-        ## for package in packages.values():
-        ##     if not package.depends:
-        ##         continue
-        ##     try:
-        ##         package.depends = [self.findOne(x) for x in package.depends]
-        ##     except MissingPackageError, err:
-        ##         if self.debug:
-        ##             raise AssertionError( "Bad Packages: %s" % ",".join(map(str,bad)))
-        ##         print >> sys.stderr, "In the package '%s': %s" % (package.package, err)
-        ##         sys.exit(1)
-
-        ## ## Figure out reverse-dependencies.
-        ## for depender in self.packages.values():
-        ##     if depender.depends is None:
-        ##         dependencies = []
-        ##     else:
-        ##         dependencies = depender.depends
-
-        ##     for dependee in dependencies:
-        ##         dependee = self.findOne(dependee)
-
-        ##         if depender not in dependee.reverse_depends:
-        ##             dependee.reverse_depends.append( depender )
-
-## def buildPackageDepends(package,depends=None,ignore=None):
-##     """ARGS:
-##     package -- package to find dependencies for
-##     depends -- packages that package depends on (needed for recursion)
-##     ignore  -- packages to ignore (they are being taken care of elsewhere)
-
-##     Returns depends"""
-##     if depends is None:
-##         depends = []
-##     if package.depends:
-##         for p in package.depends:
-##             if p not in depends and \
-##                (not ignore or p not in ignore):
-##                 depends.append(p)
-##             buildPackageDepends(p,depends,ignore)
-##     return depends
-
-## def buildDeps(options,*packages):
-##     "Build up all the dependencies"
-
-##     scanDepends(options)
-
-##     allpkgs = []
-##     for package in packages:
-##         buildPackageDepends(package,allpkgs,ignore=packages)
-##     return allpkgs
-
-## def buildPackageReverseDepends(package,reverses=None,ignore=None):
-##     if reverses is None:
-##         reverses = []
-##     if package.reverse_depends:
-##         for p in package.reverse_depends:
-##             if p not in reverses and \
-##                (not ignore or p not in ignore):
-##                 reverses.append(p)
-##             buildPackageReverseDepends(p,reverses,ignore)
-##     return reverses
-
-## def buildRDeps(options,*packages):
-##     "Build up all the reverse dependencies"
-
-##     scanReverseDepends(options)
-
-##     allpkgs = []
-##     for package in packages:
-##         buildPackageReverseDepends(package,allpkgs,ignore=packages)
-##     return allpkgs
+            os.path.walk(top, walker, None)
+            self.packages = packages
 
     def findOne(self, name):
         "Returns one package or None"
@@ -161,43 +95,88 @@ class Catalog:
         packages = set([self.packages.get(x,x) for x in packages])
 
         for package in packages:
-            found.add(package)
             deps = package.depends
-            if deps:
-                for dep in deps:
-                    found.add(dep)
-                    found.update(self.findDependencies(dep, found=found))
+            for dep in deps:
+                found.add(dep)
+                self.findDependencies(dep, found=found)
 
         return found
 
     def findReverseDependencies(self, *packages, **kwargs):
-        "Returns all reverse dependencies for the list of packages."
+        """
+        Returns all reverse dependencies for the list of packages.
+        """
 
         found = kwargs.get('found', set())
         packages = set([self.packages.get(x,x) for x in packages])
 
-        for package in self.packages.values():
-            if package in package.depends:
-                found.add(package)
-
-        for package in packages:
-            found.add(package)
-            deps = package.depends
-            if deps:
-                for dep in deps:
-                    found.add(dep)
-                    found.update(self.findDependencies(dep, found=found))
+        for parent in self.packages.values():
+            for dependent in packages:
+                if dependent in parent.depends:
+                    found.add(parent)
+                    # Add all parent packages too.
+                    self.findReverseDependencies(parent, found=found)
 
         return found
 
 if __name__ == "__main__":
-    cat = Catalog()
-    pkgs = cat.packages.values()
-    pkgs.sort()
-    for pkg in pkgs:
-        print "------------------------"
-        #pkg.prettyPrint()
-        print pkg.name
-        print cat.findDependencies(pkg)
+    import unittest
 
+    class TestCatalog(unittest.TestCase):
+        class MockPackage:
+            def __init__(self, name, depends_on=None):
+                if depends_on is None:
+                    depends_on = []
+                self.depends = depends_on
+                self.name = name
+            def __repr__(self):
+                return "<MockPackage name=%r>" % self.name
+
+        def test_findDependencies(self):
+            # Setup
+            mock_grandchild = self.MockPackage("grandchild")
+            mock_dependent  = self.MockPackage("dependent", depends_on=[mock_grandchild])
+            mock_parent     = self.MockPackage("parent", depends_on=[mock_dependent])
+            mock_packages = {'parent': mock_parent,
+                             'dependent': mock_dependent,
+                             'grandchild': mock_grandchild,
+                             }
+            catalog = Catalog(debug=True, mock_packages=mock_packages)
+
+            # Activity
+            dependents = catalog.findDependencies(mock_parent)
+
+            # Verify
+            expected = set([mock_dependent, mock_grandchild])
+            self.assertEqual(expected, dependents)
+
+        def test_findReverseDependencies(self):
+            # Setup
+            mock_dependent   = self.MockPackage("dependent")
+            mock_parent      = self.MockPackage("parent", depends_on=[mock_dependent])
+            mock_grandparent = self.MockPackage("grandparent", depends_on=[mock_parent])
+            mock_packages = {
+                'parent':      mock_parent,
+                'dependent':   mock_dependent,
+                'grandparent': mock_grandparent,
+            }
+            catalog = Catalog(debug=True, mock_packages=mock_packages)
+
+            # Activity
+            parents = catalog.findReverseDependencies(mock_dependent)
+
+            # Verify
+            expected = set([mock_parent, mock_grandparent])
+            self.assertEqual(expected, parents, "Expected %r items, got %r" % (expected, parents))
+
+    unittest.main()
+#    cat = Catalog()
+#    pkgs = cat.packages.values()
+#    pkgs.sort()
+#    for pkg in pkgs:
+#        print "------------------------"
+#        #pkg.prettyPrint()
+#        print pkg.name
+#        print cat.findDependencies(pkg)
+#
 # EOF
