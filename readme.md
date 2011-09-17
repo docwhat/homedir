@@ -24,7 +24,7 @@ You must have python 2.5 or newer.
 
 If you've never used HomeDir, then just run this from the command line:
 
-    curl -o- https://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py | python
+    curl -L -o- https://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py | python
 
 If you don't have curl, then just download (usually right-click and then select "save as...") the file [setup.py](https://github.com/docwhat/homedir/raw/master/lib/homedir/setup.py) and run it with your copy of python.
 
