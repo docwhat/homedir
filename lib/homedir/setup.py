@@ -144,7 +144,7 @@ def copytree(src, dst):
         else:
             errors.extend((src, dst, str(why)))
     if errors:
-        raise Error, errors
+        raise Exception, errors
 
 def msg(s):
     print " * %s" % s
