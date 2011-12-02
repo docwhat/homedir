@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath
 
 ## TODO - Installation tracker so that user can just 'update' without specifying packages.
 
-VERSION="2.8"
+VERSION="2.9"
 COMMANDS = None # this is set below
 HOME = os.path.expanduser("~/") # easy way to do it
 HOMEDIR = os.path.expanduser("~/.homedir")
