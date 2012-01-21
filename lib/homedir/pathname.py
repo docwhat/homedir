@@ -4,7 +4,7 @@ This is a package management system designed to work around packages
 for the homedirectory.  The code is based upon ideas from GNU Stow.
 
 HomeDir - manage the installation of packages for a user's homedir
-Copyright (C) 2004-2010 by Christian Höltje
+Copyright (C) 2004-2012 by Christian Höltje
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ class Pathname:
     """
     A class to wrap a filesystem path object. This makes working with lots of paths easier.
 
-    Based on 
+    Based on
     """
     def __init__(self, *path):
         path = [unicode(x) for x in path]
@@ -440,6 +440,6 @@ if __name__ == "__main__":
 # - #extname
 # - #expand_path(*args)
 # - #split
-    
 
-        
+
+
