@@ -20,17 +20,9 @@ You can use other peoples HomeDir repositories or create your own!
 
 That's it!
 
-### Migrating from older versions of homedir
+## Support
 
-#### 2.x
-
-I'm working on the migration stuff.
-
-#### 1.x
-
-If you've using the pre-2.0 version of HomeDir (hosted on trac.gerf.org) then you should back up your .homedir directory before running the above `setup.py` script.
-
-The main change is that everything in `~/.homedir/files` has been moved to `~/.homedir/packages` and the packages will no longer be automatically updated.
+You can find me on freenode's IRC servers as the user 'docwhat'.  I'm usually on the #homedir channel.
 
 ## The Story So Far…
 
@@ -60,12 +52,17 @@ part was the package manager.  The various .dotfiles are interesting
 to look at, but most people have their own.  So I moved just the
 package manager portion to [github](http://github.com/)
 
-## Similar Ideas
+## Migrating from older versions of homedir
 
-* I have also noticed that [Joey Hess](http://www.kitenet.net/~joey) has
-also done something similar and written two articles about it:
-  * [CVS homedir, or keeping your life in CVS](http://kitenet.net/~joey/cvshome.html)
-  * [Subversion Users: home directory in svn?](http://www.kitenet.net/~joey/svnhome.html)
+### 2.x
+
+I'm working on the migration stuff.
+
+### 1.x
+
+If you've using the pre-2.0 version of HomeDir (hosted on trac.gerf.org) then you should back up your .homedir directory before running the above `setup.py` script.
+
+The main change is that everything in `~/.homedir/files` has been moved to `~/.homedir/packages` and the packages will no longer be automatically updated.
 
 ## Change Log
 
@@ -93,3 +90,11 @@ This allows for more flexability for managing packages.
 
 This also means that sync/synccmd is no longer supported.
 
+## Similar Ideas
+
+* I have also noticed that [Joey Hess](http://www.kitenet.net/~joey) has
+also done something similar and written two articles about it:
+  * [CVS homedir, or keeping your life in CVS](http://kitenet.net/~joey/cvshome.html)
+  * [Subversion Users: home directory in svn?](http://www.kitenet.net/~joey/svnhome.html)
+* [Homebrew](http://mxcl.github.com/homebrew/) does a lot of similar things, but for the system.
+* The software package 'stow' also does similar symlinking for package installation. The original algorithm for directories was taken from there.
