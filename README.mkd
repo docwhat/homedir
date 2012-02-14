@@ -1,0 +1,95 @@
+# HomeDir
+
+*Manage your home directory!*
+
+[![Build Status](https://secure.travis-ci.org/docwhat/homedir.png)](http://travis-ci.org/docwhat/homedir)
+
+## What is homedir?
+
+HomeDir is a package manager for your home directory.
+
+You can use other peoples HomeDir repositories or create your own!
+
+## Requirements
+
+ * Ruby (1.8.7 or newer) or JRuby (1.6.0)
+
+## Quick Start
+
+    gem install homedir
+
+That's it!
+
+### Migrating from older versions of homedir
+
+#### 2.x
+
+I'm working on the migration stuff.
+
+#### 1.x
+
+If you've using the pre-2.0 version of HomeDir (hosted on trac.gerf.org) then you should back up your .homedir directory before running the above `setup.py` script.
+
+The main change is that everything in `~/.homedir/files` has been moved to `~/.homedir/packages` and the packages will no longer be automatically updated.
+
+## The Story So Far…
+
+Since about 1999 I've been keeping my home directory config files in
+[CVS](http://www.nongnu.org/cvs/). As the number of config files I've
+been storing has grown and as the number of different systems I use it
+on (my work desktop, my home desktop, my laptop, Gerf, my pda)
+increases. As the complexity has grown it has become harder to
+maintain.
+
+So, I started looking around for a better solution. I noticed that
+[SVN](http://subversion.tigris.org/) is a much better version control
+system. I was already familiar with
+[stow](http://www.gnu.org/software/stow/stow.html) as well. So I
+tinkered around with combining them.
+
+And thus homedir was born!
+
+Since then, I rewrote HomeDir completely in python. This gives me more
+control over the help and error messages. I can do better when
+conflicts arrive. As well as I can add an elementry package format,
+which allows me to solve the problem that uninstalling a stow package
+can take forever if you have a lot of directories in your home.
+
+A [friend](http://willnorris.com/) pointed out that the most important
+part was the package manager.  The various .dotfiles are interesting
+to look at, but most people have their own.  So I moved just the
+package manager portion to [github](http://github.com/)
+
+## Similar Ideas
+
+* I have also noticed that [Joey Hess](http://www.kitenet.net/~joey) has
+also done something similar and written two articles about it:
+  * [CVS homedir, or keeping your life in CVS](http://kitenet.net/~joey/cvshome.html)
+  * [Subversion Users: home directory in svn?](http://www.kitenet.net/~joey/svnhome.html)
+
+## Change Log
+
+## 3.x
+
+  * Rewrite in Ruby
+  * Tons of unit tests
+
+## 2.x
+
+  * Broke out the code to be easier to debug and work with.
+  * Started adding tests.
+  * Suggestions on package management from Will Norris.
+
+## 1.x
+
+The original HomeDir, which was hosted on trac.gerf.org, is going to be considered version 1.
+
+Version 1 had a configuration file that kept track of where your packages were located.
+
+In this new version packages can be placed anyplace under the directory
+`~/.homedir/packages` (except inside another package, of course).
+
+This allows for more flexability for managing packages.
+
+This also means that sync/synccmd is no longer supported.
+
