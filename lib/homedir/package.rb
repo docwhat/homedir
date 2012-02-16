@@ -5,6 +5,12 @@ require 'yaml'
 
 module Homedir
   class Package
+    # A package contains all the meta information about the package:
+    #
+    # * name, description, etc.
+    # * pre and post install instructions.
+    # * location of the package directory.
+    #
     REQUIRED_OPTIONS = [
       :name,
       :description,
