@@ -1,2 +1,13 @@
+*.gem
+*.rbc
 *.swp
 *~
+/.bundle
+/.config
+/.yardoc
+/.rvmrc
+/Gemfile.lock
+/doc/
+/pkg/
+/spec/reports
+/tmp/
