@@ -98,6 +98,7 @@ class Homedir::Package
     end
   end
 
+  # Returns the {#name} attribute
   def to_s
     @name
   end
