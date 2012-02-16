@@ -24,6 +24,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency('fakefs', ["~> 0.4.0"])
   gem.add_development_dependency('factory_girl', ["~> 2.5.2"])
 
+  gem.add_development_dependency('yard')
+
   gem.add_development_dependency('guard')
   gem.add_development_dependency('guard-rspec')
   gem.add_development_dependency('guard-bundler')

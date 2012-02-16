@@ -1,6 +1,8 @@
 require 'pathname'
 require 'homedir/package'
 
+# A Repository represents a directory containing
+# {Homedir::Package Package} objects.
 class Homedir::Repository
   attr_reader :directory, :package_loader, :packages, :name
 
