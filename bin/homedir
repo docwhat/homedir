@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+require 'rubygems' if Gem.nil?
+require 'homedir/cli'
+
+Homedir::CLI.start
