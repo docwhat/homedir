@@ -1,6 +1,10 @@
 require 'thor'
 
 module Homedir
+  # The command line interface for {Homedir}.
+  #
+  # See the source or the command line tool `bin/homedir` for more
+  # information
   class CLI < Thor
 
     desc "list", "List all known packages."

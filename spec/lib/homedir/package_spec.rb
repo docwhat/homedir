@@ -1,12 +1,9 @@
 require 'spec_helper'
 require 'homedir/package'
+require 'homedir/errors'
 require 'pathname'
 
 describe Homedir::Package do
-
-  context "loading a v3 package from disk" do
-    describe "#read_from_directory"
-  end
 
   describe "#new" do
     context "creating a package from scratch" do
@@ -36,24 +33,52 @@ describe Homedir::Package do
     end
   end
 
-  describe "#from_directory" do
-    it "should read its configuration from a directory"
+  describe ".hash" do
+    it "should be the same for two identically named packages" do
+      pkg1 = build(:package, :name => 'samename')
+      pkg2 = build(:package, :name => pkg1.name)
+      pkg1.hash.should == pkg2.hash
+    end
+  end
+
+  describe ".eql?" do
+    it "should be true for identically named packages" do
+      pkg1 = build(:package, :name => 'samename')
+      pkg2 = build(:package, :name => pkg1.name)
+      pkg1.should eql(pkg2)
+    end
   end
 
   describe ".name" do
-    it "should not accept an invalid name" do
+    it "cannot have spaces" do
       pkg = build(:package)
-      expect { pkg.name = "a name" }.to raise_error
+      expect { pkg.name = "a name" }.to raise_error(Homedir::InvalidNameError)
     end
   end
 
   describe ".valid?" do
-    it "should require a name" do
-      build(:package, :name => nil).should_not be_valid
+    context "name" do
+      it "is required" do
+        build(:package, :name => nil).should_not be_valid
+      end
+
+      it "should be shown in .errors" do
+        pkg = build(:package, :name => nil)
+        pkg.valid?
+        pkg.errors.join.should include("name must not be empty")
+      end
     end
 
-    it "should require a description" do
-      build(:package, :description => nil).should_not be_valid
+    context "description" do
+      it "should require a description" do
+        build(:package, :description => nil).should_not be_valid
+      end
+
+      it "should be shown in .errors" do
+        pkg = build(:package, :description=> nil)
+        pkg.valid?
+        pkg.errors.join.should include("description must not be empty")
+      end
     end
   end
 
