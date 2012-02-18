@@ -21,7 +21,6 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency('rake')
   gem.add_development_dependency('rspec', ["~> 2.8"])
-  gem.add_development_dependency('fakefs', ["~> 0.4.0"])
   gem.add_development_dependency('factory_girl', ["~> 2.5.2"])
 
   gem.add_development_dependency('yard')

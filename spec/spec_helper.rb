@@ -1,12 +1,19 @@
-require 'fakefs'
-require 'fakefs/spec_helpers'
+require 'tmpdir'
 require 'factory_girl'
 require 'factories'
+
+def within_a_tmpdir
+  Dir.mktmpdir('homedir-spec-') do |dir|
+    Dir.chdir(dir)
+    yield
+  end
+end
 
 RSpec.configure do |config|
   # Allows using build(), create(), etc. without the "FactoryGirl." part.
   config.include FactoryGirl::Syntax::Methods
 
-  # resets the fake filesystem after each example
-  config.include FakeFS::SpecHelpers
+  config.around(:each) do |example|
+    within_a_tmpdir(&example)
+  end
 end
