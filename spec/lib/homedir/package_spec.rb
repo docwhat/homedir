@@ -1,7 +1,23 @@
 require 'spec_helper'
 require 'homedir/package'
+require 'homedir/hacks'
 require 'homedir/errors'
 require 'pathname'
+
+shared_examples "a string setter and getter" do
+  let(:attribute) { :setter }
+  it "should be setable" do
+    subject.send("#{attribute}=", "some string")
+  end
+  it "should be getable" do
+    subject.send("#{attribute}=", "some string")
+    subject.send(attribute).should == "some string"
+  end
+  it "should be set to nil" do
+    subject.send("#{attribute}=", nil)
+    subject.send(attribute).should == nil
+  end
+end
 
 describe Homedir::Package do
 
@@ -33,6 +49,33 @@ describe Homedir::Package do
     end
   end
 
+  describe "#load_from_directory" do
+    it "should run .loadv1() for v1 packages" do
+      Homedir::Package.should_receive(:loadv1).once
+      dir = Pathname.pwd + "package-dir"
+      dir.mkdir
+      control = dir + ".homedir.control"
+      control.open('w') { nil }
+      Homedir::Package.load_from_directory dir
+    end
+
+    it "should run .loadv2() for v2 packages" do
+      Homedir::Package.should_receive(:loadv2).once
+      dir = Pathname.pwd + "package-dir"
+      (dir + '.homedir').mkdir_p
+      (dir + ".homedir" + "control").open('w') { nil }
+      Homedir::Package.load_from_directory dir
+    end
+
+    it "should run .loadv3() for v3 packages" do
+      Homedir::Package.should_receive(:loadv3).once
+      dir = Pathname.pwd + "package-dir"
+      (dir + '.homedir').mkdir_p
+      (dir + ".homedir" + "control.yml").open('w') { nil }
+      Homedir::Package.load_from_directory dir
+    end
+  end
+
   describe ".hash" do
     it "should be the same for two identically named packages" do
       pkg1 = build(:package, :name => 'samename')
@@ -53,6 +96,37 @@ describe Homedir::Package do
     it "cannot have spaces" do
       pkg = build(:package)
       expect { pkg.name = "a name" }.to raise_error(Homedir::InvalidNameError)
+    end
+  end
+
+  describe ".pre_install" do
+    it_behaves_like "a string setter and getter" do
+      let(:attribute) { :pre_install }
+    end
+  end
+  describe ".post_install" do
+    it_behaves_like "a string setter and getter" do
+      let(:attribute) { :post_install }
+    end
+  end
+  describe ".pre_remove" do
+    it_behaves_like "a string setter and getter" do
+      let(:attribute) { :pre_remove }
+    end
+  end
+  describe ".post_remove" do
+    it_behaves_like "a string setter and getter" do
+      let(:attribute) { :post_remove }
+    end
+  end
+  describe ".pre_update" do
+    it_behaves_like "a string setter and getter" do
+      let(:attribute) { :pre_update }
+    end
+  end
+  describe ".pre_update" do
+    it_behaves_like "a string setter and getter" do
+      let(:attribute) { :post_update }
     end
   end
 

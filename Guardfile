@@ -7,8 +7,10 @@ guard 'bundler' do
   # watch(/^.+\.gemspec/)
 end
 
-guard 'rspec', :version => 2, :cli => "--color --format doc --fail-fast" do
+guard 'rspec', :version => 2, :cli => "--color --format doc" do
   watch(%r{^spec/.+_spec\.rb$})
+  watch(%r{^lib/}) { "spec/integration" }
+  watch(%r{^(lib|bin)/}) { "spec/acceptance" }
   watch(%r{^lib/(.+)\.rb$})     { |m| "spec/lib/#{m[1]}_spec.rb" }
   watch('spec/spec_helper.rb')  { "spec" }
   watch('spec/factories.rb')  { "spec" }

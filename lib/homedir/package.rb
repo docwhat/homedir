@@ -20,12 +20,16 @@ module Homedir
       :directory,
     ].freeze
     DEFAULT_VALUES = {
-      :name           => nil,
-      :description    => nil,
-      :dependencies   => [],
-      :post_install   => nil,
-      :pre_uninstall  => nil,
-      :directory      => nil,
+      :name         => nil,
+      :description  => nil,
+      :dependencies => [],
+      :pre_install  => nil,
+      :post_install => nil,
+      :pre_remove   => nil,
+      :post_remove  => nil,
+      :pre_update   => nil,
+      :post_update  => nil,
+      :directory    => nil,
     }.freeze
 
     # The name of the package.
@@ -47,13 +51,37 @@ module Homedir
     # @return [Enumerable] A list of package {#name names}.
     attr_reader :dependencies
 
-    # A script that should run after install.
+    # A script to run before a package is enabled.
+    #
+    # @return {String}
+    attr_accessor :pre_install
+
+    # A script to run after a package is enabled.
     #
     # @return {String}
     attr_accessor :post_install
 
-    # A script to run before install.
-    attr_accessor :pre_uninstall
+    # A script to run before the package is disabled.
+    # @return {String}
+    attr_accessor :pre_remove
+
+    # A script to run after the package is disabled
+    # @return {String}
+    attr_accessor :post_remove
+
+    # A script to run before upgrading the package's source
+    #
+    # This is run before any upgrade steps run for the package source.
+    # @return {String}
+    attr_accessor :pre_update
+
+    # A script that runs after upgrading the package's source
+    #
+    # This is run after a package is upgraded and after the
+    # the package has been re-enabled but before the pre_install
+    # script.
+    # @return {String}
+    attr_accessor :post_update
 
     # The directory where the package is stored.
     #
@@ -158,6 +186,41 @@ module Homedir
     # @return {String} The {#name} of the package.
     def to_s
       @name
+    end
+
+    # Loads a package from a directory.
+    #
+    # This auto-detects the homedir-version the package
+    # was written for.
+    # @param {Pathname} path The path of the directory
+    def self.load_from_directory path
+      if (path + '.homedir.control').exist?
+        Homedir::Package.loadv1 path
+      elsif (path + '.homedir' + 'control').exist?
+        Homedir::Package.loadv2 path
+      elsif (path + '.homedir' + 'control.yml').exist?
+        Homedir::Package.loadv3
+      end
+    end
+
+    private
+
+    # Loads a version 1 package from a directory.
+    #
+    # @param {Pathname} path The path of the directory
+    def self.loadv1 path
+    end
+
+    # Loads a version 2 package from a directory.
+    #
+    # @param {Pathname} path The path of the directory
+    def self.loadv2 path
+    end
+
+    # Loads a version 3 package from a directory.
+    #
+    # @param {Pathname} path The path of the directory
+    def self.loadv3 path
     end
   end
 end
