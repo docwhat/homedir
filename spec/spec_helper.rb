@@ -4,8 +4,10 @@ require 'factories'
 
 def within_a_tmpdir
   Dir.mktmpdir('homedir-spec-') do |dir|
+    old_path = Dir.pwd
     Dir.chdir(dir)
     yield
+    Dir.chdir(old_path)
   end
 end
 
