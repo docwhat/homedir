@@ -22,7 +22,17 @@ That's it!
 
 ## Support
 
-You can find me on freenode's IRC servers as the user 'docwhat'.  I'm usually on the #homedir channel.
+* File an [issue](https://github.com/docwhat/homedir/issues).
+* Freenode IRC in [`#homedir`](http://webchat.freenode.net/?channels=rvm).
+* Contact me [directly](http://docwhat.org/email).
+
+## Contributing
+
+I love having people help me.  All changes are welcome!
+
+* Submit a [pull request](https://github.com/docwhat/homedir/pulls)
+* Add to the [wiki](https://github.com/docwhat/homedir/wiki).
+* Use the github instant editing feature.
 
 ## The Story So Far…
 

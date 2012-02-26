@@ -1,0 +1,4 @@
+:name: version3-example
+:dependencies:
+- version2-example
+- version1-example

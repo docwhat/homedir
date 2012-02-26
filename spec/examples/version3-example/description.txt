@@ -1,0 +1,3 @@
+This describes a version 3 package.
+
+The user can put whatever text in here they want and it'll be shown to the user.

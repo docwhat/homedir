@@ -1,0 +1,11 @@
+package: version1-example
+priority: normal
+maintainer: Christian Holtje <docwhat@gerf.org>
+standards-version: 1
+dependencies:
+ version2-example
+ version3-example
+description:
+  Some package description
+  .
+  ...with multiple lines.

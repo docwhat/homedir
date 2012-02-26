@@ -1,0 +1,13 @@
+package: version2-example
+priority: normal
+maintainer: Christian Höltje <docwhat@gerf.org>
+depends: version1-example
+ version3-example
+standards-version: 1
+description: This is an example version 2 package
+ It is showing off behavior that exists in version 2
+ .
+ This description is basically meaningless.
+dirs:
+ combined
+ version2
