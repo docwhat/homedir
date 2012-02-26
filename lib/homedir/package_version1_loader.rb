@@ -21,7 +21,7 @@ module Homedir
 
       pkg.name = control[:package]
       pkg.description = control[:description] || ''
-      pkg.dependencies = (control[:dependencies] || '').split("\n")
+      pkg.dependencies = (control[:depends] || '').split("\n")
 
       return pkg
     end
