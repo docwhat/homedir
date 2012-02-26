@@ -15,7 +15,7 @@ module Homedir
 
       control = parse_control_file control_path
 
-      pkg = @package_class.new( :directory => path )
+      pkg = Package.new( :directory => path )
 
       pkg.name = control[:package]
       pkg.description = control[:description] || ''

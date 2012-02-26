@@ -3,9 +3,6 @@ require 'homedir/errors'
 
 module Homedir
   class PackageVersion1Loader
-    def initialize(package_class=Homedir::Package)
-      @package_class = package_class
-    end
 
     # Loads a package from a path
     #
@@ -17,7 +14,7 @@ module Homedir
 
       control = parse_control_file control_path
 
-      pkg = @package_class.new( :directory => path )
+      pkg = Package.new( :directory => path )
 
       pkg.name = control[:package]
       pkg.description = control[:description] || ''

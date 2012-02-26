@@ -4,16 +4,12 @@ require "homedir/errors"
 
 module Homedir
   class PackageVersion3Loader
-    def initialize(package_class=Homedir::Package)
-      @package_class = package_class
-    end
-
     # Loads a package from a path
     #
     # @param {Pathname} path The directory of the package
     # @return {Homedir::Package} The package object
     def load_from_path(path)
-      pkg = @package_class.new(:directory => path)
+      pkg = Package.new(:directory => path)
       control_file = path + 'homedir.yml'
       raise InvalidPackageDirectoryError.new("The directory #{path} isn't a valid package") unless control_file.file?
       control = YAML::load_file control_file.to_s
