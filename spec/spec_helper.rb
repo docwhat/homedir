@@ -4,6 +4,9 @@ require 'tmpdir'
 require 'factory_girl'
 require 'factories'
 
+# Load all spec files
+Dir["./spec/support/**/*.rb"].each {|f| require f}
+
 RSpec.configure do |config|
   # Allows using build(), create(), etc. without the "FactoryGirl." part.
   config.include FactoryGirl::Syntax::Methods

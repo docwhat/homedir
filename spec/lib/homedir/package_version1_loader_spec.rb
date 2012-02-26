@@ -8,13 +8,7 @@ describe Homedir::PackageVersion1Loader do
       let(:package_path) { EXAMPLES_DIR + "version1-example" }
       let(:package) { subject.load_from_path package_path }
 
-      it "returns a package" do
-        package.should be_an_instance_of Homedir::Package
-      end
-
-      it "should be valid" do
-        package.should be_valid
-      end
+      it_behaves_like "a package loader"
 
       it "with the correct name" do
         package.name.should == "version1-example"

@@ -4,9 +4,6 @@ require 'homedir/errors'
 
 module Homedir
   class PackageVersion2Loader < PackageVersion1Loader
-    def initialize(package_class=Homedir::Package)
-      @package_class = package_class
-    end
 
     # Loads a package from a path
     #

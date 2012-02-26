@@ -7,7 +7,7 @@ module Homedir
   # information
   class CLI < Thor
 
-    desc "list", "List all known packages."
+    desc "list", "Lists available packages.""
     method_option(
       :remote,
       :type => :boolean,
@@ -50,6 +50,11 @@ module Homedir
       puts "Not implemented yet #{package_name.inspect}"
     end
 
+    desc "repair", "Scans through your home directory and repairs all links. Warning: This can take a long time."
+    def repair
+      # FIXME: needs to do something
+      puts "Not implemented yet"
+    end
   end
 end
 
