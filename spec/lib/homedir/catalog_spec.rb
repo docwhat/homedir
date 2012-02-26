@@ -71,16 +71,5 @@ describe Homedir::Catalog do
       subject.find_by_name(pkg.name).should == pkg
     end
   end
-
-  context "given a directory of packages" do
-    before(:each) do
-      Pathname.any_instance.stub(:children) { [1, 2] }
-    end
-
-    it "should load packages for each directory" do
-      Homedir::Package.should_receive(:load_from_directory).twice.and_return(:package)
-      subject.load(Pathname.new 'somedirectory')
-    end
-  end
 end
 

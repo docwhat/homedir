@@ -48,7 +48,7 @@ module Homedir
     # A list of package names this package depends on.
     #
     # When assigning a list, they can either be {Homedir::Package Package} objects or strings.
-    # @return [Enumerable] A list of package {#name names}.
+    # @return [Set] The set of package {#name names}.
     attr_reader :dependencies
 
     # A script to run before a package is enabled.
@@ -128,7 +128,7 @@ module Homedir
 
     # {include:#dependencies}
     def dependencies= value
-      @dependencies = value.map { |p| p.to_s }
+      @dependencies = Set.new( value.map { |p| p.to_s } )
     end
 
     # {include:#directory}
@@ -188,39 +188,5 @@ module Homedir
       @name
     end
 
-    # Loads a package from a directory.
-    #
-    # This auto-detects the homedir-version the package
-    # was written for.
-    # @param {Pathname} path The path of the directory
-    def self.load_from_directory path
-      if (path + '.homedir.control').exist?
-        Homedir::Package.loadv1 path
-      elsif (path + '.homedir' + 'control').exist?
-        Homedir::Package.loadv2 path
-      elsif (path + '.homedir' + 'control.yml').exist?
-        Homedir::Package.loadv3
-      end
-    end
-
-    private
-
-    # Loads a version 1 package from a directory.
-    #
-    # @param {Pathname} path The path of the directory
-    def self.loadv1 path
-    end
-
-    # Loads a version 2 package from a directory.
-    #
-    # @param {Pathname} path The path of the directory
-    def self.loadv2 path
-    end
-
-    # Loads a version 3 package from a directory.
-    #
-    # @param {Pathname} path The path of the directory
-    def self.loadv3 path
-    end
   end
 end

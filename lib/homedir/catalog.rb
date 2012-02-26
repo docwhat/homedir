@@ -3,18 +3,6 @@ require 'homedir/errors'
 module Homedir
   class Catalog < Set
 
-    # Load all packages in directory `path` into the catalog.
-    #
-    # @param {Pathname} path The directory to scan for packages.
-    # @return {Homedir::Catalog} It returns itself.
-    def load path
-      path.children.each do |child|
-        pkg = Homedir::Package.load_from_directory(child)
-        self << pkg if pkg
-      end
-      self
-    end
-
     # Find the package with the name `name`
     #
     # @param {String} name The name of the {Homedir::Package package} to find.

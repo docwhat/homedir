@@ -14,4 +14,8 @@ module Homedir
   # message for the list of acceptable characters in a name.
   class InvalidNameError < Error
   end
+
+  # The directory does not contain a package
+  class InvalidPackageDirectoryError < Error
+  end
 end

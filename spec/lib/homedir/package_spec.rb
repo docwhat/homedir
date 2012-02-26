@@ -26,14 +26,12 @@ describe Homedir::Package do
       describe "dependencies" do
         it "should accept all strings" do
           package = build(:package, :dependencies => ['another_package'])
-          package.dependencies.size.should == 1
-          package.dependencies[0].should == 'another_package'
+          package.dependencies.should == Set.new(['another_package'])
         end
         it "should accept packages" do
           another_package = build(:package)
           package = build(:package, :dependencies => [another_package])
-          package.dependencies.size.should == 1
-          package.dependencies[0].should == another_package.name
+          package.dependencies.should == Set.new([another_package.name])
         end
       end
 
@@ -46,33 +44,6 @@ describe Homedir::Package do
         desc = "some words"
         build(:package, :description => desc).description.should == desc
       end
-    end
-  end
-
-  describe "#load_from_directory" do
-    it "should run .loadv1() for v1 packages" do
-      Homedir::Package.should_receive(:loadv1).once
-      dir = Pathname.pwd + "package-dir"
-      dir.mkdir
-      control = dir + ".homedir.control"
-      control.open('w') { nil }
-      Homedir::Package.load_from_directory dir
-    end
-
-    it "should run .loadv2() for v2 packages" do
-      Homedir::Package.should_receive(:loadv2).once
-      dir = Pathname.pwd + "package-dir"
-      (dir + '.homedir').mkdir_p
-      (dir + ".homedir" + "control").open('w') { nil }
-      Homedir::Package.load_from_directory dir
-    end
-
-    it "should run .loadv3() for v3 packages" do
-      Homedir::Package.should_receive(:loadv3).once
-      dir = Pathname.pwd + "package-dir"
-      (dir + '.homedir').mkdir_p
-      (dir + ".homedir" + "control.yml").open('w') { nil }
-      Homedir::Package.load_from_directory dir
     end
   end
 
