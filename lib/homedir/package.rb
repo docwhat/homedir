@@ -90,15 +90,15 @@ module Homedir
     # @return {Pathname}
     attr_reader :directory
 
-    # Create a new {Homedir::Package Package} instance.
+    # Create a new {Package} instance.
     #
     # @param {Hash} options
-    # @option options [String] :name The name of the package.
-    # @option options [String] :description The description of the package.
-    # @option options [Enumerable] :dependencies A list of {Homedir::Package packages} or {String strings}.
-    # @option options [Pathname] :directory The directory the packages is located at.
-    # @option options [String] :post_install Commands to run after installing the package.
-    # @option options [String] :pre_uninstall Commands to run before uninstalling the package.
+    # @option options {String} :name The name of the package.
+    # @option options {String} :description The description of the package.
+    # @option options {Enumerable} :dependencies A list of {Homedir::Package packages} or {String strings}.
+    # @option options {Pathname} :directory The directory the packages is located at.
+    # @option options {String} :post_install Commands to run after installing the package.
+    # @option options {String} :pre_uninstall Commands to run before uninstalling the package.
     def initialize(options = {})
       options = DEFAULT_VALUES.merge(options)
 

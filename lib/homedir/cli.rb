@@ -7,7 +7,7 @@ module Homedir
   # information
   class CLI < Thor
 
-    desc "list", "Lists available packages.""
+    desc "list", "Lists available packages."
     method_option(
       :remote,
       :type => :boolean,
