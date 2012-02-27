@@ -30,4 +30,30 @@ shared_examples "a package loader" do
       end
     end
   end
+
+  describe ".path_is_valid?" do
+    context "with a package directory" do
+
+      it "returns true" do
+        subject.should be_path_is_valid(package_path)
+      end
+    end
+
+    context "with a missing package directory" do
+      let(:package_path) { Pathname.new "does-not-exist" }
+
+      it "returns false" do
+        subject.should_not be_path_is_valid(package_path)
+      end
+    end
+
+    context "with an invalid package directory" do
+      let(:package_path) { Pathname.new "exists" }
+      before(:each) { package_path.mkdir }
+
+      it "returns false" do
+        subject.should_not be_path_is_valid(package_path)
+      end
+    end
+  end
 end

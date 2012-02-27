@@ -18,16 +18,30 @@ module Homedir
       ].freeze
     end
 
+    # Loads a package from a path
+    #
+    # @param {Pathname} path The directory of the package
+    # @return {Homedir::Package} The package object
     def load_from_path path
       loaders.each do |loader|
         begin
-          return loader.load_from_path(path)
+          return loader.load_from_path(path) if loader.path_is_valid?(path)
         rescue InvalidPackageDirectoryError
           next
         end
       end
 
       raise InvalidPackageDirectoryError.new("The directory '#{path}' doesn't contain a valid package")
+    end
+
+    # Is the path a valid version1 package directory?
+    #
+    # @return {Boolean} Returns true if the path is a valid package directory.
+    def path_is_valid? path
+      loaders.each do |loader|
+        return true if loader.path_is_valid?(path)
+      end
+      return false
     end
 
   end
