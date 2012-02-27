@@ -1,7 +1,8 @@
 require 'homedir/errors'
+require 'set'
 
 module Homedir
-  class Catalog < Set
+  class Catalog < ::Set
 
     # Find the package with the name `name`
     #
