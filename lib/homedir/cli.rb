@@ -1,4 +1,6 @@
 require 'thor'
+require 'homedir'
+require 'pathname'
 
 module Homedir
   # The command line interface for {Homedir}.
@@ -6,6 +8,27 @@ module Homedir
   # See the source or the command line tool `bin/homedir` for more
   # information
   class CLI < Thor
+
+    no_tasks do
+      # The directories to scan for repositories
+      #
+      # @return {Enumerable} A list of Pathname objects
+      def repositories
+        [ Pathname.new(ENV['HOME']) + '.homedir' + 'packages']
+      end
+
+      # Helper method to initialize the catalog, if needed.
+      #
+      # @return {Homedir::Catalog} A populated catalog
+      def catalog
+        @catalog ||= Catalog.new.tap do |cat|
+          pdl = PackageDiscoveryLoader.new(cat)
+          repositories.each do |repo|
+            pdl.load_from_directory(repo)
+          end
+        end
+      end
+    end
 
     desc "list", "Lists available packages."
     method_option(
@@ -15,8 +38,11 @@ module Homedir
       :aliases => '-r',
       :description => "Queries the remote server")
     def list
-      # FIXME: list needs to do something
-      puts "Not implemented yet"
+      packages = catalog.to_a # TODO sort
+      puts "#{packages.length} local packages found:"
+      packages.each do |package|
+        puts " * #{package}"
+      end
     end
 
     desc "info PACKAGE", "Describe a specific PACKAGE in detail."
