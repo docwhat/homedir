@@ -3,7 +3,7 @@ require 'homedir'
 
 describe "Loading packages" do
   let (:package_names) do
-    EXAMPLES_DIR.children.map { |p| p.basename.to_s }
+    EXAMPLES_DIR.children.map { |p| p.basename.to_s }.sort
   end
   context "with the example packages" do
     let(:catalog) { Homedir::Catalog.new }
@@ -11,7 +11,7 @@ describe "Loading packages" do
 
     it "should load all packages" do
       pdl.load_from_directory(EXAMPLES_DIR)
-      catalog.map { |p| p.name }.should == package_names
+      catalog.map { |p| p.name }.sort.should == package_names
     end
   end
 end
