@@ -33,9 +33,19 @@ module Homedir
       #
       # @param {Homedir::Package} pkg The package to display info about
       def print_info(pkg)
-        puts "Name: #{pkg.name}"
+        puts "Name:         #{pkg.name}"
+        dependencies = if pkg.dependencies.length > 0
+                         pkg.dependencies.sort.to_a.join(", ")
+                       else
+                         'none'
+                       end
+        puts "Dependencies: #{dependencies}"
+        puts "Directory:    #{pkg.directory}"
         puts "Description:"
-        puts pkg.description
+        pkg.description.split(/[\n\r]+/).each do |line|
+          line = '' if line == "."
+          puts "  #{line}"
+        end
       end
     end
 
