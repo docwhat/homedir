@@ -126,6 +126,15 @@ module Homedir
       end
     end
 
+    # Comparison method used for sorting.
+    #
+    # Note: `list_of_packages.sort_by{|p| p.name}` is much faster.
+    #
+    # @return {FixNumber} -1, 0, or 1 if other is less, equal, greater than self
+    def <=>(other)
+      self.name <=> other.name
+    end
+
     # {include:#dependencies}
     def dependencies= value
       @dependencies = Set.new( value.map { |p| p.to_s } )

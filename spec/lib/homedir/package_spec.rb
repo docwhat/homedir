@@ -63,6 +63,14 @@ describe Homedir::Package do
     end
   end
 
+  describe ".<=> (comparisons/sorting)" do
+    it "should order alphabetically by name" do
+      a = build(:package, :name => 'aaaa')
+      b = build(:package, :name => 'bbbb')
+      [b, a].sort.should == [a, b]
+    end
+  end
+
   describe ".name" do
     it "cannot have spaces" do
       pkg = build(:package)

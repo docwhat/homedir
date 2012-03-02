@@ -38,7 +38,7 @@ module Homedir
       :aliases => '-r',
       :description => "Queries the remote server")
     def list
-      packages = catalog.to_a # TODO sort
+      packages = catalog.sort.to_a
       puts "#{packages.length} local packages found:"
       packages.each do |package|
         puts " * #{package}"
