@@ -8,13 +8,25 @@ module Homedir
   # See the source or the command line tool `bin/homedir` for more
   # information
   class CLI < Thor
+    attr_writer :repositories, :output
 
     no_tasks do
       # The directories to scan for repositories
       #
       # @return {Enumerable} A list of Pathname objects
       def repositories
-        [ Pathname.new(ENV['HOME']) + '.homedir' + 'packages']
+        @repositories ||= [ Pathname.new(ENV['HOME']) + '.homedir' + 'packages']
+      end
+
+      # The stream to send output to.
+      #
+      # @return {IO}
+      def output
+        @output ||= $stdout
+      end
+
+      def puts *args
+        output.puts *args
       end
 
       # Helper method to initialize the catalog, if needed.
