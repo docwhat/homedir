@@ -19,17 +19,24 @@ Gem::Specification.new do |gem|
   gem.require_paths         = ["lib"]
   gem.version               = Homedir::VERSION
 
+  # Task and testing tools
   gem.add_development_dependency('rake')
   gem.add_development_dependency('rspec', ["~> 2.8"])
   gem.add_development_dependency('factory_girl', ["~> 2.5.2"])
 
+  # Documentation tools
   gem.add_development_dependency('yard')
   gem.add_development_dependency('redcarpet')
 
-  gem.add_development_dependency('guard')
-  gem.add_development_dependency('guard-rspec')
-  gem.add_development_dependency('guard-bundler')
-  gem.add_development_dependency('guard-yard')
-  gem.add_development_dependency('rb-fsevent')
-  gem.add_development_dependency('growl')
+  # We don't need these gems when testing on travis-ci.org
+  if ENV['TRAVIS'].nil?
+    # Guard - local CI testing
+    gem.add_development_dependency('guard')
+    gem.add_development_dependency('guard-rspec')
+    gem.add_development_dependency('guard-bundler')
+    gem.add_development_dependency('guard-yard')
+    gem.add_development_dependency('rb-fsevent')
+    gem.add_development_dependency('growl')
+  end
+
 end
