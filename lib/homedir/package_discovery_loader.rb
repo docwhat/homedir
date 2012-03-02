@@ -1,19 +1,23 @@
 require 'homedir/package_loader'
 
 module Homedir
+  # This class is for loading collections of {Package packages}
+  # from the file-system recursively.
   class PackageDiscoveryLoader
     attr_reader :catalog
     def initialize(catalog=nil)
       @catalog = catalog
     end
 
+    # @private
+    # @return [PackageLoader] A package loader instance
     def loader
       @loader ||= PackageLoader.new
     end
 
     # Recursively loads packages from the directory into {#catalog}
     #
-    # @params {Pathname} path The directory to start scanning from
+    # @param {Pathname} path The directory to start scanning from
     # @return {Homedir::PackageDiscoveryLoader} self
     def load_from_directory path
       if loader.path_is_valid?(path)

@@ -3,13 +3,13 @@ require 'pathname'
 require 'fileutils'
 require 'yaml'
 
-# A package contains all the meta information about the package:
-#
-# * name, description, etc.
-# * pre and post install instructions.
-# * location of the package directory.
-#
 module Homedir
+  # A package contains all the meta information about the package:
+  #
+  # * name, description, etc.
+  # * pre and post install instructions.
+  # * location of the package directory.
+  #
   class Package
     # A list of required values. If a value in this
     # list isn't set, then the object isn't {#valid? valid}.
@@ -19,6 +19,9 @@ module Homedir
       :description,
       :directory,
     ].freeze
+
+    # A list of default values for the object.
+    # @see #initialize
     DEFAULT_VALUES = {
       :name         => nil,
       :description  => nil,
@@ -37,42 +40,42 @@ module Homedir
     # * It must match the regex: `[a-zA-Z0-9_-]`.
     # * It must match the directory it'll be written-to/read-from
     #
-    # @return {String} The name of the package
+    # @return [String] The name of the package
     attr_reader :name
 
     # A description of the package for humans.
     #
-    # @return {String} The description of the package
+    # @return [String] The description of the package
     attr_accessor :description
 
     # A list of package names this package depends on.
     #
-    # When assigning a list, they can either be {Homedir::Package Package} objects or strings.
+    # When assigning a list, they can either be {Package} objects or strings.
     # @return [Set] The set of package {#name names}.
     attr_reader :dependencies
 
     # A script to run before a package is enabled.
     #
-    # @return {String}
+    # @return [String]
     attr_accessor :pre_install
 
     # A script to run after a package is enabled.
     #
-    # @return {String}
+    # @return [String]
     attr_accessor :post_install
 
     # A script to run before the package is disabled.
-    # @return {String}
+    # @return [String]
     attr_accessor :pre_remove
 
     # A script to run after the package is disabled
-    # @return {String}
+    # @return [String]
     attr_accessor :post_remove
 
     # A script to run before upgrading the package's source
     #
     # This is run before any upgrade steps run for the package source.
-    # @return {String}
+    # @return [String]
     attr_accessor :pre_update
 
     # A script that runs after upgrading the package's source
@@ -80,25 +83,25 @@ module Homedir
     # This is run after a package is upgraded and after the
     # the package has been re-enabled but before the pre_install
     # script.
-    # @return {String}
+    # @return [String]
     attr_accessor :post_update
 
     # The directory where the package is stored.
     #
     # * The directory's basename must match {#name}.
     #
-    # @return {Pathname}
+    # @return [Pathname]
     attr_reader :directory
 
     # Create a new {Package} instance.
     #
-    # @param {Hash} options
-    # @option options {String} :name The name of the package.
-    # @option options {String} :description The description of the package.
-    # @option options {Enumerable} :dependencies A list of {Homedir::Package packages} or {String strings}.
-    # @option options {Pathname} :directory The directory the packages is located at.
-    # @option options {String} :post_install Commands to run after installing the package.
-    # @option options {String} :pre_uninstall Commands to run before uninstalling the package.
+    # @param [Hash] options
+    # @option options [String] :name The name of the package.
+    # @option options [String] :description The description of the package.
+    # @option options [Enumerable] :dependencies A list of {Package packages} or strings.
+    # @option options [Pathname] :directory The directory the packages is located at.
+    # @option options [String] :post_install Commands to run after installing the package.
+    # @option options [String] :pre_uninstall Commands to run before uninstalling the package.
     def initialize(options = {})
       options = DEFAULT_VALUES.merge(options)
 
@@ -109,15 +112,15 @@ module Homedir
     end
 
     # The hashes are based on the name
-    # @return {Fixnum} The hash
+    # @return [Fixnum] The hash
     def hash
       @name.hash
     end
 
     # Returns true if the packages have the same name.
     #
-    # @param {Homedir::Package} other The package to check for equality to.
-    # @return {Boolean} `true` if the `name` matches.
+    # @param [Package] other The package to check for equality to.
+    # @return [Boolean] `true` if the `name` matches.
     def eql?(other)
       if other.respond_to? :name
         other.name == @name
@@ -130,7 +133,7 @@ module Homedir
     #
     # Note: `list_of_packages.sort_by{|p| p.name}` is much faster.
     #
-    # @return {FixNumber} -1, 0, or 1 if other is less, equal, greater than self
+    # @return [FixNumber] -1, 0, or 1 if other is less, equal, greater than self
     def <=>(other)
       self.name <=> other.name
     end
@@ -146,17 +149,19 @@ module Homedir
     end
 
     # {include:#name}
-    # @param {String} value The new name for the package.
-    # @raise [Homedir::InvalidNameError] If the name doesn't match the regexp `/^[0-9a-zA-Z_-]+$/`
-    def name= value
+    #
+    # @param [String] new_name The new name for the package.
+    # @raise [InvalidNameError] If the name doesn't match the regexp `/^[0-9a-zA-Z_-]+$/`
+    def name= new_name
       raise InvalidNameError.new(
-        "The name #{value.inspect} must only contain numbers, letters, `_` and `-`"
-      ) unless value.nil? || value =~ /^[0-9a-zA-Z_-]+$/
-      @name = value
+        "The name #{new_name.inspect} must only contain numbers, letters, `_` and `-`"
+      ) unless new_name.nil? || new_name =~ /^[0-9a-zA-Z_-]+$/
+      @name = new_name
     end
 
     # Saves the package info to {#directory}`/.homedir/` if it {#valid? valid}.
     #
+    # @return [nil]
     # @see #valid?
     def save!
       raise "The package is not valid: #{self}" unless valid?

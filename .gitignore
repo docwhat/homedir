@@ -10,5 +10,6 @@
 /doc/
 /pkg/
 /spec/reports
+/log/
 /tmp/
 /.rbx/

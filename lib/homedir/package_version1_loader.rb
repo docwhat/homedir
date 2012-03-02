@@ -2,6 +2,8 @@ require 'homedir/package'
 require 'homedir/errors'
 
 module Homedir
+  # A class to load version 1 Package files from
+  # a filesystem
   class PackageVersion1Loader
 
     # Loads a package from a path

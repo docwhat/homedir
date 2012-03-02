@@ -3,6 +3,8 @@ require 'homedir/package_version1_loader'
 require 'homedir/errors'
 
 module Homedir
+  # A class to load version 2 Package files from
+  # a filesystem
   class PackageVersion2Loader < PackageVersion1Loader
 
     # Loads a package from a path

@@ -4,6 +4,13 @@ require 'homedir/package_version2_loader'
 require 'homedir/package_version3_loader'
 
 module Homedir
+  # All purpose {Package} loader.
+  #
+  # Use this class to load a {Package} from the file-system. It'll autodetect
+  # the version of the package and use the correct loader.
+  # @see PackageVersion1Loader
+  # @see PackageVersion2Loader
+  # @see PackageVersion3Loader
   class PackageLoader
 
     # The list of loaders, in the order they should be tried

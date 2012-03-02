@@ -28,6 +28,15 @@ module Homedir
           end
         end
       end
+
+      # Helper method to display the info for a single package.
+      #
+      # @param {Homedir::Package} pkg The package to display info about
+      def print_info(pkg)
+        puts "Name: #{pkg.name}"
+        puts "Description:"
+        puts pkg.description
+      end
     end
 
     desc "list", "Lists available packages."
@@ -45,10 +54,14 @@ module Homedir
       end
     end
 
-    desc "info PACKAGE", "Describe a specific PACKAGE in detail."
-    def info(package_name)
-      # FIXME: info needs to do something
-      puts "Not implemented yet #{package_name.inspect}"
+    desc "info PACKAGE [PACKAGE...]", "Describe a specific PACKAGE in detail."
+    def info(*package_name)
+      package_name.each do |name|
+        pkg = catalog.find_by_name(name)
+        if pkg
+          print_info pkg
+        end
+      end
     end
 
     desc "enable PACKAGE...", "Enable PACKAGE, making it available in your home directory."

@@ -2,6 +2,7 @@ require 'homedir/errors'
 require 'set'
 
 module Homedir
+  # A collection of {Package packages}
   class Catalog < ::Set
 
     # Find the package with the name `name`

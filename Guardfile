@@ -18,4 +18,9 @@ guard 'rspec', :version => 2, :cli => "--color --format doc" do
   watch(%r{^spec/examples/})       { "spec" }
 end
 
-
+FileUtils.mkdir_p File.expand_path('../log', __FILE__)
+guard 'yard', stdout: 'log/yardserver.log', stderr: 'log/yardserver.log' do
+  #watch(%r{app/.+\.rb})
+  watch(%r{lib/.+\.rb})
+  #watch(%r{ext/.+\.c})
+end

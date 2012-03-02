@@ -6,5 +6,6 @@ require 'homedir/catalog'
 require 'homedir/package_discovery_loader'
 require 'homedir/errors'
 
+# Homedir - The ultimate home-directory package manager.
 module Homedir
 end
