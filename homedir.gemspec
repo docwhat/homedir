@@ -19,6 +19,9 @@ Gem::Specification.new do |gem|
   gem.require_paths         = ["lib"]
   gem.version               = Homedir::VERSION
 
+  # Runtime Dependencies
+  gem.add_runtime_dependency('thor', '~> 0.14.6')
+
   # Task and testing tools
   gem.add_development_dependency('rake')
   gem.add_development_dependency('rspec', ["~> 2.8"])
@@ -29,7 +32,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency('redcarpet')
 
   # We don't need these gems when testing on travis-ci.org
-  if ENV['TRAVIS'].nil?
+  if ENV['TRAVIS'].nil? and RUBY_VERSION !~ /^1\.8/
     # Guard - local CI testing
     gem.add_development_dependency('guard')
     gem.add_development_dependency('guard-rspec')
