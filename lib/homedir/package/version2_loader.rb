@@ -1,5 +1,5 @@
 require 'homedir/package'
-require 'homedir/package_version1_loader'
+require 'homedir/package/version1_loader'
 require 'homedir/errors'
 
 module Homedir

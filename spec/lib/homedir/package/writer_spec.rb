@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'homedir/errors'
 require 'homedir/package/writer'
-require 'homedir/package_version3_loader'
+require 'homedir/package/version3_loader'
 
 describe Homedir::Package::Writer do
   describe ".write" do

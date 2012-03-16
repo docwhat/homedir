@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'homedir/package'
-require 'homedir/package_loader'
+require 'homedir/package/loader'
 
 describe Homedir::PackageLoader do
   EXAMPLES_DIR.children.each do |path|

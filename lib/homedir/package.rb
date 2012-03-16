@@ -1,5 +1,6 @@
 require 'homedir/errors'
 require 'homedir/package/writer'
+require 'homedir/package/discovery_loader'
 require 'pathname'
 require 'fileutils'
 require 'yaml'

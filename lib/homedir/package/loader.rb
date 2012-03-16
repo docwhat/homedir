@@ -1,7 +1,7 @@
 require 'homedir/errors'
-require 'homedir/package_version1_loader'
-require 'homedir/package_version2_loader'
-require 'homedir/package_version3_loader'
+require 'homedir/package/version1_loader'
+require 'homedir/package/version2_loader'
+require 'homedir/package/version3_loader'
 
 module Homedir
   # All purpose {Package} loader.

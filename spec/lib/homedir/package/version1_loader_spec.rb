@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'pathname'
-require 'homedir/package_version1_loader'
+require 'homedir/package/version1_loader'
 
 describe Homedir::PackageVersion1Loader do
   describe ".load_from_path" do

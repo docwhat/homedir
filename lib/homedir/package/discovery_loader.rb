@@ -1,4 +1,4 @@
-require 'homedir/package_loader'
+require 'homedir/package/loader'
 
 module Homedir
   # This class is for loading collections of {Package packages}
