@@ -1,4 +1,5 @@
 require 'homedir/errors'
+require 'homedir/package/writer'
 require 'pathname'
 require 'fileutils'
 require 'yaml'
@@ -34,6 +35,57 @@ module Homedir
       :post_update  => nil,
       :directory    => nil,
     }.freeze
+
+    # Creates an empty package, suitable as
+    # a template for new packages.
+    #
+    # @param [String] name The name of the package.
+    # @param [Pathname] parent_directory The directory where the package will go.
+    # @return [Package] The new package
+    def self.make_empty_package(name, parent_directory)
+      pkg = Package.new
+      pkg.name = name
+      pkg.description = <<DESC
+The new package #{pkg.name}!
+
+You should really edit this description with something
+more useful.
+DESC
+      pkg.directory = parent_directory + name
+      pkg.dependencies << "some-dependency"
+      pkg.dependencies << "another-dependency"
+
+      all_scripts.each do |attr|
+        pkg.send "#{attr}=", <<SCRIPT
+#!/bin/sh
+
+# Exit the script with non-zero exit code if
+# an undeclared variable is used or if any
+# command returns a non-zero exit code.
+set -eu
+
+echo "Do your #{attr} actions here or delete this if you don't need it.'"
+
+# EOF
+SCRIPT
+      end
+
+
+      return pkg
+    end
+
+    # Returns a list of all script attributes supported by
+    # {Package}.
+    #
+    # @return [Enumerable] All script names.
+    def self.all_scripts
+      @all_scripts ||= ['pre', 'post'].map do |prefix|
+        ['install', 'remove', 'update'].map do |action|
+          "#{prefix}_#{action}"
+        end
+      end.flatten
+    end
+
 
     # The name of the package.
     #
@@ -157,21 +209,6 @@ module Homedir
         "The name #{new_name.inspect} must only contain numbers, letters, `_` and `-`"
       ) unless new_name.nil? || new_name =~ /^[0-9a-zA-Z_-]+$/
       @name = new_name
-    end
-
-    # Saves the package info to {#directory}`/.homedir/` if it {#valid? valid}.
-    #
-    # @return [nil]
-    # @see #valid?
-    def save!
-      raise "The package is not valid: #{self}" unless valid?
-
-      control_dir = directory + '.homedir'
-      FileUtils.mkdir_p(control_dir.to_s) unless control_dir.directory?
-
-      (control_dir + "control").open('w') do |f|
-        f.write self.to_yaml
-      end
     end
 
     # Verifies the package is valid to save.

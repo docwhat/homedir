@@ -18,4 +18,12 @@ module Homedir
   # The directory does not contain a package
   class InvalidPackageDirectoryError < Error
   end
+
+  # A package was a duplicate
+  class DuplicatePackageError < Error
+  end
+
+  # The directory doesn't exist
+  class NoSuchDirectoryError < Error
+  end
 end

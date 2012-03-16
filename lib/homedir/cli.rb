@@ -8,6 +8,8 @@ module Homedir
   # See the source or the command line tool `bin/homedir` for more
   # information
   class CLI < Thor
+    include Thor::Actions
+
     attr_writer :repositories, :output
 
     no_tasks do
@@ -27,6 +29,11 @@ module Homedir
 
       def puts *args
         output.puts *args
+      end
+
+      def error mesg
+        $stderr.puts " ** ERROR: #{mesg}"
+        exit 4
       end
 
       # Helper method to initialize the catalog, if needed.
@@ -98,17 +105,33 @@ module Homedir
       puts "Not implemented yet #{packages.inspect}"
     end
 
-    desc "create PACKAGE...", "Create PACKAGE, prompting you for information."
+    # TODO: Add ability to specify files to copy into the package.
+    # TODO: Add an interactive mode that asks questions.
+    desc "create PACKAGE", "Create a PACKAGE. You can then edit and customize this package."
     method_option(
       :directory,
       :type => :string,
-      :default => "#{ENV['HOME']}/.homedir/package",
+      :default => "#{ENV['HOME']}/.homedir/packages",
       :aliases => "-d",
       :description => "Where to save the DIRECTORY."
     )
     def create(package_name)
-      # FIXME: info needs to do something
-      puts "Not implemented yet #{package_name.inspect}"
+      directory = Pathname.new options["directory"]
+
+      pkg = Homedir::Package.make_empty_package(package_name, directory)
+      begin
+        Homedir::Package::Writer.new.write(pkg)
+      rescue Homedir::DuplicatePackageError
+        error "The package #{pkg.name} already exists in '#{pkg.directory}'"
+        return
+      rescue Homedir::NoSuchDirectoryError
+        error "Unable to create a package in '#{pkg.directory.dirname}'"
+        return
+      end
+
+      print_info(pkg)
+
+      say "The package '#{package_name}' has been created in '#{directory}'."
     end
 
     desc "repair", "Scans through your home directory and repairs all links. Warning: This can take a long time."

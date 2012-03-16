@@ -47,6 +47,42 @@ describe Homedir::Package do
     end
   end
 
+  describe "#make_empty_package" do
+    context "should create a package that" do
+      let(:directory) { Pathname.new "/tmp/foo" }
+      let(:name) { 'somename' }
+      subject { Homedir::Package.make_empty_package(name, directory) }
+
+      it "has the passed in name" do
+        subject.name.should == name
+      end
+
+      it "has a description" do
+        subject.description.length.should >= 10
+      end
+
+      it "has the correct directory" do
+        subject.directory.should == (directory + name)
+      end
+
+      it "has dependencies" do
+        subject.dependencies.length.should >= 1
+      end
+
+      Homedir::Package.all_scripts.each do |attr|
+        it "has a #{attr} script" do
+          script = subject.send(attr)
+          script.should include("#!/bin/sh")
+          script.should include("set -eu")
+        end
+      end
+
+      it "should be valid" do
+        subject.should be_valid
+      end
+    end
+  end
+
   describe ".hash" do
     it "should be the same for two identically named packages" do
       pkg1 = build(:package, :name => 'samename')
@@ -141,21 +177,4 @@ describe Homedir::Package do
     end
   end
 
-  describe ".save!" do
-    it "should refuse to save if invalid" do
-      pkg = build(:package, :name => nil)
-      expect { pkg.save! }.to raise_error
-    end
-
-    it "should refuse to save if directory isn't set" do
-      pkg = build(:package, :directory => nil)
-      expect { pkg.save! }.to raise_error
-    end
-
-    it "should save files to '.homedir'" do
-      pkg = create(:package)
-      dot_homedir = Pathname.new(pkg.directory) + '.homedir'
-      dot_homedir.should be_a_directory
-    end
-  end
 end
