@@ -8,7 +8,7 @@ Then you want HomeDir!
 
 It is, in essence, a package manager for your home directory.
 
-It stores *packages* in your `~/.homedir/packages` directory.  These packages can be pulled from my 
+It stores *packages* in your `~/.homedir/packages` directory.  These packages can be pulled from my
 [examples](https://github.com/docwhat/homedir-examples) or you can set up your own!
 
 This allows you to:
@@ -91,4 +91,4 @@ This also means that sync/synccmd is no longer supported.
 * Finish moving out the package and dependency checking stuff into a Catalog class.
 * Fix cache-tool package in examples.
 * Add `homedir-pkg <pkg-name> <file-to-add>...` command to make building a package from existing files easier.
-
+* Get a dedicated freenode #homedir channel: "hello freenode" to mrmist
