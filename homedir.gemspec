@@ -31,15 +31,4 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency('yard')
   gem.add_development_dependency('redcarpet')
 
-  # We don't need these gems when testing on travis-ci.org
-  if ENV['TRAVIS'].nil? and RUBY_VERSION !~ /^1\.8/
-    # Guard - local CI testing
-    gem.add_development_dependency('guard')
-    gem.add_development_dependency('guard-rspec')
-    gem.add_development_dependency('guard-bundler')
-    gem.add_development_dependency('guard-yard')
-    gem.add_development_dependency('rb-fsevent')
-    gem.add_development_dependency('growl')
-  end
-
 end
